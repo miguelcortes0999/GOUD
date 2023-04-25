@@ -3,7 +3,11 @@ import numpy as np
 from typing import List, Tuple, Optional, Union
 import matplotlib.pyplot as plt
 
-class PromedioMovil:
+# Modificar las variables
+# Modificar los errores
+
+
+class PromedioMovil():
     def __init__(self, datos: Union[List, Tuple, pd.DataFrame], ventana: int = 2, pronostico: int = 1):
         '''
         PromedioMovil(datos(df,list,tuple), ventana:int, periodos:int(1))\n
@@ -24,9 +28,12 @@ class PromedioMovil:
         self.datos = datos
         self.ventana = ventana
         self.pronostico_periodos = pronostico
+        self.titulo_grafico = f'Promedio móvil ({self.ventana} periodos, {self.pronostico_periodos} periodos pronosticados)'
+        self.nombre_modelo = 'Promedio movil'
+
     
     # Calular historico y pronóstico
-    def calcular(self):
+    def Calcular(self):
         # Comprobar el tipo de dato de usuario
         if isinstance(self.datos, pd.DataFrame):
             self.historico = self.datos.copy()
@@ -39,25 +46,25 @@ class PromedioMovil:
         pronostico.iloc[:,0] = pronostico.iloc[:,0].shift(1).rolling(window=self.ventana ,
                                                                     min_periods=self.ventana ).mean()
         # Devolver el resultado
-        self.pronostico = pronostico
-        # Agregar pronsoticos
-        n = len(self.pronostico)
-        for i in range(self.pronostico_periodos):
-            self.pronostico.loc[n+i,0] = np.mean(list(pronostico.iloc[:,0])[-self.ventana::])
-        return self.pronostico
-    
-    # Grafica el pronóstico
-    def graficar(self):
-        plt.figure(figsize=(12, 6))
-        plt.plot(self.historico.index, self.historico.iloc[:, 0], label='Histórico')
-        plt.plot(self.pronostico.index, self.pronostico.iloc[:, 0], label='Pronóstico')
-        plt.xlabel('Fecha')
-        plt.ylabel('Valor')
-        plt.title(f'Promedio móvil ({self.ventana} periodos, {self.pronostico_periodos} periodos pronosticados)')
-        plt.legend()
-        plt.show()
+        self.pronostico = pronostico.copy()
+        self.pronostico_historico = pronostico.copy()
+        return self.pronostico_historico
 
-class PromedioMovilPonderado:
+    def Pronosticar(self):
+        # Agregar pronsoticos
+        n = len(self.pronostico_historico)
+        for i in range(self.pronostico_periodos):
+            self.pronostico.loc[n+i,0] = np.mean(list(self.pronostico.iloc[:,0])[-self.ventana::])
+        self.pronostico = self.pronostico[self.pronostico.index > self.pronostico_historico.index.max()]
+        return self.pronostico
+
+df = pd.DataFrame([3,4,6,6,5,8,9,8,9,8,8,7,6,6,6,5,4,3,4,5,4,5,6])
+pm = PromedioMovil(df, pronostico=4)
+print(pm.Calcular())
+print(pm.Pronosticar())
+
+
+class PromedioMovilPonderado():
     def __init__(self, datos: Union[List, Tuple, pd.DataFrame], ventana: int = None, pesos: List[float] = None):
         '''
         PromedioMovilPonderado(datos(df,list,tuple), ventana:int, periodos:int(1), pesos:List[float] = None)\n
@@ -106,29 +113,43 @@ class PromedioMovilPonderado:
                     raise TypeError("La ventana es mas grande que los datos historicos.")
                 self.ventana = ventana
                 self.pesos = [1/ventana]*ventana
+        self.nombre_modelo = 'Promedio movil ponderado'
     
     # Calcular historico y pronóstico
-    def calcular(self):            
+    def Calcular(self):            
         # Calcular el promedio móvil ponderado para el número de periodos suministrados
         pronostico_pmp = np.array(self.historico.iloc[:, 0])[0:self.ventana]
-        for i in range(self.ventana, len(self.historico)+1):
+        vector_pesos = np.array(self.pesos)
+        for i in range(self.ventana, len(self.historico)):
             vector_historico = np.array(self.historico.iloc[:, 0])[i-self.ventana:i]
-            vector_pesos = np.array(self.pesos)
             producto_punto = np.dot(vector_historico, vector_pesos)
             pronostico_pmp = np.append(pronostico_pmp, producto_punto)
-        self.pronostico = pd.DataFrame(pronostico_pmp)
-        return self.pronostico
+        self.pronostico_historico = pd.DataFrame(pronostico_pmp)
+        print(type(self.pronostico_historico))
+        return self.pronostico_historico
     
-    # Grafica el pronóstico
-    def graficar(self):
-        plt.figure(figsize=(12, 6))
-        plt.plot(self.historico.index, self.historico.iloc[:, 0], label='Histórico')
-        plt.plot(self.pronostico.index, self.pronostico.iloc[:, 0], label='Pronóstico')
-        plt.xlabel('Fecha')
-        plt.ylabel('Valor')
-        plt.title(f'Promedio móvil ponderado ({self.ventana} periodos)')
-        plt.legend()
-        plt.show()
+    def Pronosticar(self, predecir: int=1):
+        self.titulo_grafico = f'Promedio móvil ponderado ({self.pesos} pesos, {predecir} periodos pronosticados)'
+        self.pronostico = self.historico.iloc[-self.ventana::,:]
+        pronostico_pmp = np.array(self.historico.iloc[:, 0])[-self.ventana::]
+        vector_pesos = np.array(self.pesos)
+        for i in range(self.ventana, self.ventana+predecir):
+            vector_pronostico = pronostico_pmp[i-self.ventana:i]
+            print(vector_pronostico, vector_pesos)
+            producto_punto = np.dot(vector_pronostico, vector_pesos)
+            pronostico_pmp = np.append(pronostico_pmp, producto_punto)
+        self.pronostico = pd.DataFrame(pronostico_pmp, columns=[0])
+        self.pronostico = self.pronostico.iloc[self.ventana::,:]
+        self.pronostico.index = [i for i in range(len(self.historico), len(self.historico)+predecir)]
+        print(type(self.pronostico))
+        return self.pronostico
+
+# Prueba
+pmp = PromedioMovilPonderado(df, ventana=4, pesos=[0.1, 0.2, 0.3, 0.4])
+print('-'*50)
+print(pmp.Calcular())
+print(pmp.Pronosticar(predecir=3))
+
 
 class RegresionLinealSimple():
     def __init__(self, datos: Union[List, Tuple, pd.DataFrame]):
@@ -155,9 +176,11 @@ class RegresionLinealSimple():
             raise TypeError("El tipo de datos ingresado no es válido.")
         self.x = np.array(list(self.historico.index))
         self.y = np.array(list(self.historico.iloc[:,0]))
+        self.titulo_grafico = 'Regresión lineal simple'
+        self.nombre_modelo = 'Regresion lineal'
     
     # Calcular historico
-    def calcular(self):
+    def Calcular(self):
         self.b = None
         self.m = None
         x_mean = np.mean(self.x)
@@ -166,9 +189,13 @@ class RegresionLinealSimple():
         s_xx = np.sum((self.x - x_mean) ** 2)
         self.m = s_xy / s_xx
         self.b = y_mean - self.m * x_mean
+        self.pronostico_historico = pd.DataFrame(index=self.x)
+        for x in self.pronostico_historico.index:
+            self.pronostico_historico.loc[x,0] = self.b + self.m * x
+        return self.pronostico_historico
     
     # Calcular pronóstico
-    def predecir(self, x_nuevos: np.array):
+    def Pronosticar(self, x_nuevos: np.array):
         if self.b is None or self.m is None:
             raise ValueError("La regresión aún no se ha calculado.")
         resultado = pd.DataFrame([None for x in x_nuevos],index=x_nuevos)
@@ -178,19 +205,15 @@ class RegresionLinealSimple():
         return self.pronostico
 
     # Retornar ecuación
-    def ecuacion(self):
+    def Ecuacion(self):
         return {'m':self.m, 'b':self.b}
 
-    # Grafica el pronóstico
-    def graficar(self):
-        plt.figure(figsize=(12, 6))
-        plt.scatter(self.historico.index, self.historico.iloc[:,0], label='Histórico')
-        plt.scatter(self.pronostico.index, self.pronostico.iloc[:,0], label='Regresión lineal simple')
-        plt.xlabel('Variable independiente')
-        plt.ylabel('Variable dependiente')
-        plt.title('Regresión lineal simple')
-        plt.legend()
-        plt.show()
+# Prueba
+df= pd.DataFrame([3,4,6,6,5,8,9,8,9,8,8,7,6,6,6,5,4,3,4,5,4,5,6])
+reg = RegresionLinealSimple(df)
+print(reg.Calcular())
+print(reg.Ecuacion())
+print(reg.Pronosticar([25,26,28,30]))
 
 class SuavizacionExponencialSimple():
     def __init__(self, datos: Union[List, Tuple, pd.DataFrame], alfa: float = None,
@@ -224,9 +247,10 @@ class SuavizacionExponencialSimple():
             self.alfa = 2/(len(self.datos)+1)
         elif self.alfa < 0 or self.alfa > 1:
             raise TypeError("El valor de alfa debe estar entre 0 y 1.")
+        self.nombre_modelo = 'Suvizacion exponencial simple'
 
-    # Calcular historico y pronóstico 
-    def calcular(self):
+    # Calcular historico
+    def Calcular(self):
         # Inicializar la suavización exponencial simple
         if self.nivel_inicial is not None :
             nivel_t = self.nivel_inicial
@@ -238,20 +262,26 @@ class SuavizacionExponencialSimple():
             nivel_t_1 = nivel_t
             nivel_t = self.alfa * self.historico.iloc[i,0] + (1-self.alfa) * nivel_t_1
             self.se_simple.append(nivel_t)
-        self.pronostico = pd.DataFrame(self.se_simple)
+        self.pronostico_historico = pd.DataFrame(self.se_simple)
+        return self.pronostico_historico
+
+    # Calcular pronóstico 
+    def Pronosticar(self, predecir: int = 1):
+        self.se_simple_pronosticado = [self.se_simple[-1]]
+        indice = []
+        for i in range(len(self.historico), len(self.historico)+predecir):
+            indice.append(i)
+            nivel_t_1 = self.se_simple_pronosticado[-1]
+            nivel_t = self.alfa * self.se_simple_pronosticado[-1] + (1-self.alfa) * nivel_t_1
+            self.se_simple_pronosticado.append(nivel_t)
+        self.pronostico = pd.DataFrame(self.se_simple_pronosticado[1::], index=indice)
+        self.titulo_grafico = f'Suavizacion Exponencial Simple con alfa: {self.alfa}, {predecir} peridos'
         return self.pronostico
-    
-    # Grafica el pronóstico
-    def graficar(self):
-        if not self.se_simple:
-            raise ValueError("La regresión aún no se ha calculado.")
-        plt.plot(self.historico.index, self.historico.iloc[:,0], label='Historico')
-        plt.plot(self.pronostico.index, self.pronostico.iloc[:,0], label='Suavizacion Exponencial Simple')
-        plt.title(f'Suavizacion Exponencial Simple con alfa: {self.alfa}.')
-        plt.xlabel('Periodo')
-        plt.ylabel('Valor')
-        plt.legend()
-        plt.show()
+
+# prueba
+ses = SuavizacionExponencialSimple(df, alfa=0.2)
+print(ses.Calcular())
+print(ses.Pronosticar(predecir=5))
 
 class SuavizacionExponencialDoble():
     def __init__(self, datos: Union[List, Tuple, pd.DataFrame], alfa: float = None, beta: float = None,
@@ -492,3 +522,24 @@ class SuavizacionExponencialTriple():
         plt.title('Suaviazación exponencial triple alfa,beta,gamma = '+str((self.alfa, self.beta, self.gamma)))
         plt.legend()
         plt.show()
+
+class Graficacion_suprema():
+    def __init__(self, modelos: Union[List, Tuple]):
+        self.modelos = modelos
+        ax = plt.gca()
+        historico = self.modelos[0].historico
+        ax.plot(historico.index, historico[historico.columns[0]], label='Historico')
+        colores = plt.cm.get_cmap('Set1',len(modelos))
+        for o,modelo in enumerate(self.modelos):
+            if modelo.nombre_modelo == 'Regresion lineal':
+                min = modelo.historico.index.max()+1
+                max = modelo.pronostico.index.max()
+                ax.plot(np.arange(min,max), modelo.b + modelo.m * np.arange(min,max), label=modelo.nombre_modelo, color=colores.colors[o])
+                ax.plot(np.arange(0,min), modelo.b + modelo.m * np.arange(0,min), label='Pron. '+modelo.titulo_grafico, linestyle='--', color=colores.colors[o])               
+            else:
+                ax.plot(modelo.pronostico.index,modelo.pronostico[modelo.pronostico.columns[0]], label=modelo.nombre_modelo, color=colores.colors[o])    
+                ax.plot(modelo.pronostico_historico.index,modelo.pronostico_historico[modelo.pronostico_historico.columns[0]], linestyle='--', label='Pron. '+modelo.titulo_grafico, color=colores.colors[o])
+        plt.legend()
+        plt.show()
+
+Graficacion_suprema([reg, pm, pmp, ses])
