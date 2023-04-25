@@ -1,0 +1,5 @@
+pandas
+pulp
+numpy
+gurobipy
+matplotlib
