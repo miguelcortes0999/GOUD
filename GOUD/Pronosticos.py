@@ -130,13 +130,11 @@ class PromedioMovilPonderado():
         vector_pesos = np.array(self.pesos)
         for i in range(self.ventana, self.ventana+predecir):
             vector_pronostico = pronostico_pmp[i-self.ventana:i]
-            print(vector_pronostico, vector_pesos)
             producto_punto = np.dot(vector_pronostico, vector_pesos)
             pronostico_pmp = np.append(pronostico_pmp, producto_punto)
         self.pronostico = pd.DataFrame(pronostico_pmp, columns=[0])
         self.pronostico = self.pronostico.iloc[self.ventana::,:]
         self.pronostico.index = [i for i in range(len(self.historico), len(self.historico)+predecir)]
-        print(type(self.pronostico))
         return self.pronostico
 
 # Prueba
@@ -547,15 +545,30 @@ class ErroresModelos():
         for o,modelo in enumerate(self.modelos):
             demanda_pronsoticada = np.array(modelo.pronostico_historico[modelo.pronostico_historico.columns[0]])
             # Error Absoluto Total (EAT)
-            EAT= np.round(np.nansum(np.abs(demanda_pronsoticada - demanda_historica)),2) 
+            EAT = np.round(np.nansum(np.abs(demanda_pronsoticada - demanda_historica)),2) 
             self.metricas.loc[modelo.titulo_grafico,"EAT"] = EAT
             # Error Absoluto Medio (EAM)
-            EAM= np.round(np.nanmean(np.abs(demanda_pronsoticada - demanda_historica)),2) 
+            EAM = np.round(np.nanmean(np.abs(demanda_pronsoticada - demanda_historica)),2) 
             self.metricas.loc[modelo.titulo_grafico,"EAM"] = EAM
-            # Desviacion Absoluta Media (DAM)
-            # Error Porcentual Absoluto Media (EPAM)
-            # Error Porcentual (EP)
+            # Error Absoluto Maximo (EAMX)
+            EAMX = np.round(np.nanmax(np.abs(demanda_pronsoticada - demanda_historica)),2) 
+            self.metricas.loc[modelo.titulo_grafico,"EAMX"] = EAMX
+            # Error Cuadratico Medio (ECM)
+            ECM = np.round(np.nanmean((demanda_pronsoticada - demanda_historica)**2),2) 
+            self.metricas.loc[modelo.titulo_grafico,"ECM"] = ECM
             # Error Porcentual Medio (EPM)
+            EPM = np.round(np.nanmean((demanda_pronsoticada - demanda_historica)/demanda_pronsoticada),2) 
+            self.metricas.loc[modelo.titulo_grafico,"EPM"] = EPM
+            # Error Porcentual Absoluto Medio (EPAM)
+            EPAM = np.round(np.nanmean(np.abs((demanda_pronsoticada - demanda_historica)/demanda_pronsoticada)),2) 
+            self.metricas.loc[modelo.titulo_grafico,"EPAM"] = EPAM
+            # Desviacion Absoluta Media (DAM)
+            DAM = np.round(np.nanmedian(demanda_pronsoticada - demanda_historica),2) 
+            self.metricas.loc[modelo.titulo_grafico,"DAM"] = DAM
+            # Señal de Rastreo (SR)
+            errores_absolutos = np.abs(demanda_pronsoticada - demanda_historica)
+            SR = np.round(np.nanmean(errores_absolutos) / np.nanstd(errores_absolutos),2)
+            self.metricas.loc[modelo.titulo_grafico," SR"] =  SR
         return self.metricas
 
 
