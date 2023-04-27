@@ -124,11 +124,6 @@ class PromedioMovilPonderado():
         self.pronostico.index = [i for i in range(len(self.historico), len(self.historico)+horizonte_pronostico)]
         return self.pronostico
 
-# Prueba
-pmp = PromedioMovilPonderado(df, periodos_promediados=4, importancia_periodos=[0.1, 0.2, 0.3, 0.4])
-print(pmp.Calcular())
-print(pmp.Pronosticar(horizonte_pronostico=5))
-
 class RegresionLinealSimple():
     def __init__(self, datos: Union[List, Tuple, pd.DataFrame]):
         '''
@@ -491,6 +486,16 @@ class GraficarModelos():
 class ErroresModelos():
     def __init__(self, modelos: Union[List, Tuple]):
         self.modelos = modelos
+        self.diccioanrio = {
+            'EAT':'Error Absoluto Total',
+            'EAM':'Error Absoluto Medio',
+            'EAMX':'Error Absoluto Maximo',
+            'ECM':'Error Cuadratico Medio',
+            'EPM':'Error Porcentual Medio',
+            'EPAM':'Error Porcentual Absoluto Medio',
+            'DAM':'Desviacion Absoluta Media',
+            'SR':'Señal de Rastreo'
+        }
 
     # Calcular errores
     def Calcular(self):
@@ -523,5 +528,5 @@ class ErroresModelos():
             # Señal de Rastreo (SR)
             errores_absolutos = np.abs(demanda_pronsoticada - demanda_historica)
             SR = np.round(np.nanmean(errores_absolutos) / np.nanstd(errores_absolutos),2)
-            self.metricas.loc[modelo.titulo_grafico," SR"] = SR
+            self.metricas.loc[modelo.titulo_grafico,"SR"] = SR
         return self.metricas
