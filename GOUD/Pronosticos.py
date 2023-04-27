@@ -3,33 +3,25 @@ import numpy as np
 from typing import List, Tuple, Optional, Union
 import matplotlib.pyplot as plt
 
-# Modificar las variables
-# Modificar los errores
-df = pd.DataFrame([3,4,6,6,5,8,9,8,9,8,8,7,6,6,6,5,4,3,4,5,4,5,6])
-
 class PromedioMovil():
-    def __init__(self, datos: Union[List, Tuple, pd.DataFrame], ventana: int = 2):
+    def __init__(self, datos: Union[List, Tuple, pd.DataFrame], periodos_promediados: int = 2):
         '''
-        PromedioMovil(datos(df,list,tuple), ventana:int, periodos:int(1))\n
+        PromedioMovil(datos(df,list,tuple), periodos_promediados:int, periodos:int(1))\n
         Calcula el promedio móvil simple de una serie de datos.\n
         Argumentos:\n
         datos: una lista, tupla o DataFrame con los datos de la serie.
-        ventana: un entero que indica el tamaño de la ventana de promedio móvil.
+        periodos_promediados: un entero que indica el tamaño de la periodos_promediados de promedio móvil.
         Ejemplo:\n
-        datos = [1, 2, 3, 4, 5, 6]
-        df= pd.DataFrame(datos)
-        pm = PromedioMovil(df, ventana=4)
-        pm.calcular_promedio_movil()
-        print(pm.resultado)
-        pm.graficar()
+        pm = PromedioMovil(df)
+        print(pm.Calcular())
+        print(pm.Pronosticar(horizonte_pronostico=5))
         '''
         self.datos = datos
-        self.ventana = ventana
-        self.titulo_grafico = f'Promedio móvil (Periodos promediados={self.ventana})'
+        self.periodos_promediados = periodos_promediados
+        self.titulo_grafico = f'Promedio móvil (Periodos promediados={self.periodos_promediados})'
         self.nombre_modelo = 'Promedio movil'
 
-    
-    # Calular historico y pronóstico
+    # Calcular histórico
     def Calcular(self):
         # Comprobar el tipo de dato de usuario
         if isinstance(self.datos, pd.DataFrame):
@@ -40,43 +32,37 @@ class PromedioMovil():
             raise TypeError("El tipo de datos ingresado no es válido.")
         # Calcular el promedio movil el numero suministrado
         pronostico = self.historico.copy()
-        pronostico.iloc[:,0] = pronostico.iloc[:,0].shift(1).rolling(window=self.ventana ,
-                                                                    min_periods=self.ventana ).mean()
+        pronostico.iloc[:,0] = pronostico.iloc[:,0].shift(1).rolling(window=self.periodos_promediados ,
+                                                                    min_periods=self.periodos_promediados ).mean()
         # Devolver el resultado
         self.pronostico = pronostico.copy()
         self.pronostico_historico = pronostico.copy()
         return self.pronostico_historico
 
-    def Pronosticar(self, predecir: int = 1):
-        self.pronostico_periodos = predecir
+    # Calcular pronóstico
+    def Pronosticar(self, horizonte_pronostico: int = 1):
+        self.pronostico_periodos = horizonte_pronostico
         # Agregar pronsoticos
         n = len(self.pronostico_historico)
         for i in range(self.pronostico_periodos):
-            self.pronostico.loc[n+i,0] = np.mean(list(self.pronostico.iloc[:,0])[-self.ventana::])
+            self.pronostico.loc[n+i,0] = np.mean(list(self.pronostico.iloc[:,0])[-self.periodos_promediados::])
         self.pronostico = self.pronostico[self.pronostico.index > self.pronostico_historico.index.max()]
         return self.pronostico
 
-pm = PromedioMovil(df)
-print(pm.Calcular())
-print(pm.Pronosticar(predecir=5))
-
 class PromedioMovilPonderado():
-    def __init__(self, datos: Union[List, Tuple, pd.DataFrame], ventana: int = None, pesos: List[float] = None):
+    def __init__(self, datos: Union[List, Tuple, pd.DataFrame], periodos_promediados: int = None, importancia_periodos: List[float] = None):
         '''
-        PromedioMovilPonderado(datos(df,list,tuple), ventana:int, periodos:int(1), pesos:List[float] = None)\n
+        PromedioMovilPonderado(datos(df,list,tuple), periodos_promediados:int, periodos:int(1), importancia_periodos:List[float] = None)\n
         Calcula el promedio móvil ponderado de una serie de datos.\n
         Argumentos:
         datos: una lista, tupla o DataFrame con los datos de la serie.
-        ventana: un entero que indica el tamaño de la ventana de promedio móvil.
-        pesos: una lista opcional de flotantes que indica los pesos correspondientes a cada valor en la ventana.
+        periodos_promediados: un entero que indica el tamaño de la periodos_promediados de promedio móvil.
+        importancia_periodos: una lista opcional de flotantes que indica los importancia_periodos correspondientes a cada valor en la periodos_promediados.
                     Si no se especifica, se utilizará un promedio móvil simple.
         Ejemplo:\n
-        datos = [1, 2, 3, 4, 5, 6]
-        df= pd.DataFrame(datos)
-        pm = PromedioMovil(df, ventana=4, pesos=[0.1, 0.2, 0.3, 0.4])
-        pm.calcular_promedio_movil()
-        print(pm.resultado)
-        pm.graficar()
+        pmp = PromedioMovilPonderado(df, periodos_promediados=4, importancia_periodos=[0.1, 0.2, 0.3, 0.4])
+        print(pmp.Calcular())
+        print(pmp.Pronosticar(horizonte_pronostico=5))
         '''
         self.datos = datos
         # Comprobar el tipo de dato de usuario
@@ -87,60 +73,61 @@ class PromedioMovilPonderado():
         else:
             raise TypeError("El tipo de datos ingresado no es válido.")
         # Comprobación de longitudes y tamaños similares
-        if ventana is None and pesos is None:
-            raise TypeError("No ingreso pesos ni tamaño de la ventana válido.")
-        if ventana is not None and pesos is not None:
-            if ventana != len(pesos):
-                raise TypeError("Tamaño de pesos y ventana distintos.")
+        if periodos_promediados is None and importancia_periodos is None:
+            raise TypeError("No ingreso importancia_periodos ni tamaño de la periodos_promediados válido.")
+        if periodos_promediados is not None and importancia_periodos is not None:
+            if periodos_promediados != len(importancia_periodos):
+                raise TypeError("Tamaño de importancia_periodos y periodos_promediados distintos.")
             else:
-                self.ventana = ventana  
-                self.pesos = pesos 
+                self.periodos_promediados = periodos_promediados  
+                self.importancia_periodos = importancia_periodos 
         else:
-            if ventana is None:
-                if sum(pesos)!=1:
-                    raise TypeError("Suma de los pesos es diferente de 1.")
-                self.ventana = len(pesos)
-                self.pesos = pesos 
-            if pesos is None:
-                if ventana<1:
-                    raise TypeError("La ventana no es posible, debe ser >= 1.")
-                if ventana>len(datos):
-                    raise TypeError("La ventana es mas grande que los datos historicos.")
-                self.ventana = ventana
-                self.pesos = [1/ventana]*ventana
+            if periodos_promediados is None:
+                if sum(importancia_periodos)!=1:
+                    raise TypeError("Suma de los importancia_periodos es diferente de 1.")
+                self.periodos_promediados = len(importancia_periodos)
+                self.importancia_periodos = importancia_periodos 
+            if importancia_periodos is None:
+                if periodos_promediados<1:
+                    raise TypeError("La periodos_promediados no es posible, debe ser >= 1.")
+                if periodos_promediados>len(datos):
+                    raise TypeError("La periodos_promediados es mas grande que los datos historicos.")
+                self.periodos_promediados = periodos_promediados
+                self.importancia_periodos = [1/periodos_promediados]*periodos_promediados
         self.nombre_modelo = 'Promedio movil ponderado'
     
-    # Calcular historico y pronóstico
+    # Calcular histórico
     def Calcular(self):            
         # Calcular el promedio móvil ponderado para el número de periodos suministrados
-        pronostico_pmp = np.array(self.historico.iloc[:, 0])[0:self.ventana]
-        vector_pesos = np.array(self.pesos)
-        for i in range(self.ventana, len(self.historico)):
-            vector_historico = np.array(self.historico.iloc[:, 0])[i-self.ventana:i]
-            producto_punto = np.dot(vector_historico, vector_pesos)
+        pronostico_pmp = np.array(self.historico.iloc[:, 0])[0:self.periodos_promediados]
+        vector_importancia_periodos = np.array(self.importancia_periodos)
+        for i in range(self.periodos_promediados, len(self.historico)):
+            vector_historico = np.array(self.historico.iloc[:, 0])[i-self.periodos_promediados:i]
+            producto_punto = np.dot(vector_historico, vector_importancia_periodos)
             pronostico_pmp = np.append(pronostico_pmp, producto_punto)
-        pronostico_pmp = [None for _ in range(self.ventana)] + list(pronostico_pmp[self.ventana::])
+        pronostico_pmp = [None for _ in range(self.periodos_promediados)] + list(pronostico_pmp[self.periodos_promediados::])
         self.pronostico_historico = pd.DataFrame(pronostico_pmp)
         return self.pronostico_historico
     
-    def Pronosticar(self, predecir: int=1):
-        self.titulo_grafico = f'Promedio móvil ponderado (Pesos={self.pesos})'
-        self.pronostico = self.historico.iloc[-self.ventana::,:]
-        pronostico_pmp = np.array(self.historico.iloc[:, 0])[-self.ventana::]
-        vector_pesos = np.array(self.pesos)
-        for i in range(self.ventana, self.ventana+predecir):
-            vector_pronostico = pronostico_pmp[i-self.ventana:i]
-            producto_punto = np.dot(vector_pronostico, vector_pesos)
+    # Calcular pronóstico
+    def Pronosticar(self, horizonte_pronostico: int=1):
+        self.titulo_grafico = f'Promedio móvil ponderado (importancia_periodos={self.importancia_periodos})'
+        self.pronostico = self.historico.iloc[-self.periodos_promediados::,:]
+        pronostico_pmp = np.array(self.historico.iloc[:, 0])[-self.periodos_promediados::]
+        vector_importancia_periodos = np.array(self.importancia_periodos)
+        for i in range(self.periodos_promediados, self.periodos_promediados+horizonte_pronostico):
+            vector_pronostico = pronostico_pmp[i-self.periodos_promediados:i]
+            producto_punto = np.dot(vector_pronostico, vector_importancia_periodos)
             pronostico_pmp = np.append(pronostico_pmp, producto_punto)
         self.pronostico = pd.DataFrame(pronostico_pmp, columns=[0])
-        self.pronostico = self.pronostico.iloc[self.ventana::,:]
-        self.pronostico.index = [i for i in range(len(self.historico), len(self.historico)+predecir)]
+        self.pronostico = self.pronostico.iloc[self.periodos_promediados::,:]
+        self.pronostico.index = [i for i in range(len(self.historico), len(self.historico)+horizonte_pronostico)]
         return self.pronostico
 
 # Prueba
-pmp = PromedioMovilPonderado(df, ventana=4, pesos=[0.1, 0.2, 0.3, 0.4])
+pmp = PromedioMovilPonderado(df, periodos_promediados=4, importancia_periodos=[0.1, 0.2, 0.3, 0.4])
 print(pmp.Calcular())
-print(pmp.Pronosticar(predecir=5))
+print(pmp.Pronosticar(horizonte_pronostico=5))
 
 class RegresionLinealSimple():
     def __init__(self, datos: Union[List, Tuple, pd.DataFrame]):
@@ -150,12 +137,10 @@ class RegresionLinealSimple():
         Argumentos:\n
         datos: una lista, tupla o DataFrame con los datos de la serie (el inidce del data frame sera tomado como eje x).
         Ejemplo:\n
-        datos = [5,7,9,11,13,15,17,19,21,23,25]
-        reg = RegresionLinealSimple(datos)
-        reg.calcular_regresion()
-        print(reg.ecuacion())
-        print(reg.predecir([45,60,120,34]))
-        pm.graficar()
+        reg = RegresionLinealSimple(df)
+        print(reg.Calcular())
+        print(reg.Ecuacion())
+        print(reg.Pronosticar([25,26,28,29,30]))
         '''
         self.datos = datos
         # Comprobar el tipo de dato de usuario
@@ -170,7 +155,7 @@ class RegresionLinealSimple():
         self.titulo_grafico = 'Regresión lineal simple'
         self.nombre_modelo = 'Regresion lineal'
     
-    # Calcular historico
+    # Calcular histórico
     def Calcular(self):
         self.b = None
         self.m = None
@@ -199,28 +184,19 @@ class RegresionLinealSimple():
     def Ecuacion(self):
         return {'m':self.m, 'b':self.b}
 
-# Prueba
-df= pd.DataFrame([3,4,6,6,5,8,9,8,9,8,8,7,6,6,6,5,4,3,4,5,4,5,6])
-reg = RegresionLinealSimple(df)
-print(reg.Calcular())
-print(reg.Ecuacion())
-print(reg.Pronosticar([25,26,28,29,30]))
-
 class SuavizacionExponencialSimple():
-    def __init__(self, datos: Union[List, Tuple, pd.DataFrame], alfa: float = None,
-                 nivel_inicial: float = None):
+    def __init__(self, datos: Union[List, Tuple, pd.DataFrame], alfa: float = None, nivel_inicial: float = None):
         '''
         SuavizacionExponencialSimple(datos(df,list,tuple), alfa:float, nivel_inicial:float)\n
-        Clase que implementa el modelo de suavización exponencial simple para predecir valores futuros de una serie temporal.
+        Clase que implementa el modelo de suavización exponencial simple para horizonte_pronostico valores futuros de una serie temporal.
         Argumentos:\n
         datos (List, Tuple, pd.DataFrame): Serie temporal de datos.
         alfa (float): Parámetro de suavización para la serie.
         nivel_inicial (float): Valor inicial para la serie.
         Ejemplo:\n
-        datos = [77,105,89,135,100,125,115,155,120,145,135,170]
-        modelo = SuavizacionExponencialSimple(datos, alfa=0.8, nivel_inicial=77)
-        print(modelo.calcular_suavizacion_exponencial_simple())
-        print(modelo.graficar())
+        ses = SuavizacionExponencialSimple(df, alfa=0.2)
+        print(ses.Calcular())
+        print(ses.Pronosticar(horizonte_pronostico=5))
         '''
         self.datos = datos
         # Comprobar el tipo de dato de usuario
@@ -240,7 +216,7 @@ class SuavizacionExponencialSimple():
             raise TypeError("El valor de alfa debe estar entre 0 y 1.")
         self.nombre_modelo = 'Suvizacion exponencial simple'
 
-    # Calcular historico
+    # Calcular histórico
     def Calcular(self):
         # Inicializar la suavización exponencial simple
         if self.nivel_inicial is not None :
@@ -258,10 +234,10 @@ class SuavizacionExponencialSimple():
         return self.pronostico_historico
 
     # Calcular pronóstico 
-    def Pronosticar(self, predecir: int = 1):
+    def Pronosticar(self, horizonte_pronostico: int = 1):
         self.se_simple_pronosticado = [self.se_simple[-1]]
         indice = []
-        for i in range(len(self.historico), len(self.historico)+predecir):
+        for i in range(len(self.historico), len(self.historico)+horizonte_pronostico):
             indice.append(i)
             nivel_t_1 = self.se_simple_pronosticado[-1]
             nivel_t = self.alfa * self.se_simple_pronosticado[-1] + (1-self.alfa) * nivel_t_1
@@ -270,17 +246,12 @@ class SuavizacionExponencialSimple():
         self.titulo_grafico = f'Suavizacion Exponencial Simple (Alfa={self.alfa} y Niv. inicial={self.nivel_inicial})'
         return self.pronostico
 
-# prueba
-ses = SuavizacionExponencialSimple(df, alfa=0.2)
-print(ses.Calcular())
-print(ses.Pronosticar(predecir=5))
-
 class SuavizacionExponencialDoble():
     def __init__(self, datos: Union[List, Tuple, pd.DataFrame], alfa: float = None, beta: float = None,
                  nivel_inicial: float = None, tendencia_inicial: float = None):
         '''
         SuavizacionExponencialDoble(datos(df,list,tuple), alfa:float, beta:float, tendencia_inicial:float, nivel_inicial:float)\n
-        Clase que implementa el modelo de suavización exponencial doble para predecir valores futuros de una serie temporal.
+        Clase que implementa el modelo de suavización exponencial doble para horizonte_pronostico valores futuros de una serie temporal.
         Argumentos:\n
         datos (List, Tuple, pd.DataFrame): Serie temporal de datos.
         alfa (float): Parámetro de suavización para el nivel de la serie.
@@ -288,11 +259,9 @@ class SuavizacionExponencialDoble():
         nivel_inicial (float): Valor inicial para el nivel de la serie.
         tendencia_inicial (float): Valor inicial para la tendencia de la serie.
         Ejemplo:\n
-        datos = [77,105,89,135,100,125,115,155,120,145,135,170]
-        modelo = SuavizacionExponencialDoble(datos, alfa=0.8, beta=0.5, nivel_inicial = 77, tendencia_inicial = 10)
-        print(modelo.calcular_suavizacion_exponencial_doble())
-        print(modelo.predecir(3))
-        modelo.graficar()
+        sed = SuavizacionExponencialDoble(df, alfa=0.8, beta=0.5, nivel_inicial=4, tendencia_inicial=2)
+        print(sed.Calcular())
+        print(sed.Pronosticar(horizonte_pronostico=5))
         '''
         self.datos = datos
         # Comprobar el tipo de dato de usuario
@@ -313,9 +282,8 @@ class SuavizacionExponencialDoble():
         elif self.alfa < 0 or self.alfa > 1 or self.beta < 0 or self.beta > 1:
             raise TypeError("Los valores de alfa y beta deben estar entre 0 y 1.")
         self.nombre_modelo = 'Suvizacion exponencial doble'
-
     
-    # Calcular historico
+    # Calcular histórico
     def Calcular(self):
         # Definir periodo de inicio de pronostioc de suavización exponencial doble
         if self.nivel_inicial is None or self.tendencia_inicial is None: 
@@ -354,22 +322,17 @@ class SuavizacionExponencialDoble():
         return self.pronostico_historico
     
     # Calcular pronóstico
-    def Pronosticar(self, predecir: int = 1):
-        self.periodos = predecir
+    def Pronosticar(self, horizonte_pronostico: int = 1):
+        self.periodos = horizonte_pronostico
         if self.nivel is None or self.tendencia is None:
             raise ValueError("La regresión aún no se ha calculado.")
         self.pronostico = self.pronostico_historico.copy()
         # Calcular los valores de la serie suavizada para los períodos futuros
-        for i in range (1, predecir + 1):
+        for i in range (1, horizonte_pronostico + 1):
             self.pronostico.loc[len(self.pronostico), 0] = self.nivel[-1] + i * self.tendencia[-1]
         self.titulo_grafico = f'Suavización exponencial doble (Alfa={self.alfa}, Beta={self.beta}, Tend. inicial={self.tendencia_inicial} y  Niv. incial={self.nivel_inicial})'
-        self.pronostico = self.pronostico.tail(predecir)
+        self.pronostico = self.pronostico.tail(horizonte_pronostico)
         return self.pronostico
-
-# prueba
-sed = SuavizacionExponencialDoble(df, alfa=0.8, beta=0.5, nivel_inicial=4, tendencia_inicial=2)
-print(sed.Calcular())
-print(sed.Pronosticar(predecir=5))
 
 class SuavizacionExponencialTriple():
     def __init__(self, datos: Union[List, Tuple, pd.DataFrame], alfa: float, beta: float, gamma: float,
@@ -410,14 +373,9 @@ class SuavizacionExponencialTriple():
             los valores de los datos en el primer ciclo.
             El valor por defecto es None.
         Ejemplo:\n
-        modelo = SuavizacionExponencialTriple(datos, 0.2, 0.35, 0.4, ciclo=4,
-                                                tipo_nivel='mul', tipo_estacionalidad='mul', nivel_inicial=86.31,
-                                                tendencia_inicial=5.47, estacionalidad_inicial=[0.76,1.03,0.88,1.33])
-        modelo.calcular_regresion()
-        predicciones = modelo.predecir(4)
-        print(modelo.pronostico_pasado)
-        print(modelo.pronostico)
-        modelo.graficar()
+        set = SuavizacionExponencialTriple(df, alfa=0.9, beta=0.3, gamma=0.3, nivel_inicial=4, tendencia_inicial=2, tipo_nivel='mul', tipo_estacionalidad='mul')
+        print(set.Calcular())
+        print(set.Pronosticar(horizonte_pronostico=5))
         '''
         self.datos = datos
         # Comprobar el tipo de dato de usuario
@@ -499,20 +457,15 @@ class SuavizacionExponencialTriple():
         return self.pronostico_historico
 
     # Calcular pronóstico
-    def Pronosticar(self, predecir: int):
+    def Pronosticar(self, horizonte_pronostico: int):
         if self.nivel is None or self.tendencia is None or self.estacionalidad is None:
             raise ValueError("La regresión aún no se ha calculado.")
         # Calcular los valores de la serie suavizada para los períodos futuros
-        multiplicacion = np.multiply(np.arange(1, predecir + 1), self.tendencia[-1] )
+        multiplicacion = np.multiply(np.arange(1, horizonte_pronostico + 1), self.tendencia[-1] )
         suma = np.add(multiplicacion, self.nivel[-1])
-        y_suavizado_pronostico = np.multiply(suma, self.estacionalidad[-predecir::])
-        self.pronostico = pd.DataFrame(y_suavizado_pronostico, index=np.arange(self.x[-1] + 1, self.x[-1] + predecir + 1))
+        y_suavizado_pronostico = np.multiply(suma, self.estacionalidad[-horizonte_pronostico::])
+        self.pronostico = pd.DataFrame(y_suavizado_pronostico, index=np.arange(self.x[-1] + 1, self.x[-1] + horizonte_pronostico + 1))
         return self.pronostico
-
-# prueba
-set = SuavizacionExponencialTriple(df, alfa=0.9, beta=0.3, gamma=0.3, nivel_inicial=4, tendencia_inicial=2, tipo_nivel='mul', tipo_estacionalidad='mul')
-print(set.Calcular())
-print(set.Pronosticar(predecir=5))
 
 class GraficarModelos():
     def __init__(self, modelos: Union[List, Tuple]):
@@ -539,10 +492,12 @@ class ErroresModelos():
     def __init__(self, modelos: Union[List, Tuple]):
         self.modelos = modelos
 
+    # Calcular errores
     def Calcular(self):
         self.metricas = pd.DataFrame()
         demanda_historica = np.array(self.modelos[0].historico[self.modelos[0].historico.columns[0]])
         for o,modelo in enumerate(self.modelos):
+            print(modelo.nombre_modelo)
             demanda_pronsoticada = np.array(modelo.pronostico_historico[modelo.pronostico_historico.columns[0]])
             # Error Absoluto Total (EAT)
             EAT = np.round(np.nansum(np.abs(demanda_pronsoticada - demanda_historica)),2) 
@@ -568,15 +523,5 @@ class ErroresModelos():
             # Señal de Rastreo (SR)
             errores_absolutos = np.abs(demanda_pronsoticada - demanda_historica)
             SR = np.round(np.nanmean(errores_absolutos) / np.nanstd(errores_absolutos),2)
-            self.metricas.loc[modelo.titulo_grafico," SR"] =  SR
+            self.metricas.loc[modelo.titulo_grafico," SR"] = SR
         return self.metricas
-
-
-    
-#Modelo.loc['Modelo tal',:]
-
-Modelos = [reg, pm, pmp, ses, sed, set]
-
-print(ErroresModelos(Modelos).Calcular())
-
-GraficarModelos(Modelos)
