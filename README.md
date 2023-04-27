@@ -13,14 +13,13 @@ GOUD
 1.1.3. Promedio Móvil Ponderado  
 1.1.4. Suavización Exponencial Simple  
 1.1.5. Suavización Exponencial Doble (HOLT)  
-1.1.6. Suavización Exponencial Triple (HOLT-WINTERS)  
-1.1.7. Descomposición  
+1.1.6. Suavización Exponencial Triple (HOLT-WINTERS)   
 1.2. Planeacion Agregada  
 1.2.1. Planeación Agregada Con Inventario Cero  
 1.2.2. Planeacion Agregada Con Fuerza De Trabajo Constante  
 1.2.3. Planeacion Agregada Con Fuerza De Trabajo Variable  
 1.2.4. Planeacion Agregada De Trabajo Mixto (Programación Lineal)  
-1.3. Plan Maestro De Producción (MPS)  
+1.3. Progrmaación De La Producción (MPS)  
 1.3.1. Técnicas De Loteo (MRP)  
 1.3.2. Balanceo De Línea  	
 1.3.3. Secuenciación De Trabajos  
