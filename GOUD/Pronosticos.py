@@ -5,30 +5,27 @@ import matplotlib.pyplot as plt
 
 # Modificar las variables
 # Modificar los errores
-
+df = pd.DataFrame([3,4,6,6,5,8,9,8,9,8,8,7,6,6,6,5,4,3,4,5,4,5,6])
 
 class PromedioMovil():
-    def __init__(self, datos: Union[List, Tuple, pd.DataFrame], ventana: int = 2, pronostico: int = 1):
+    def __init__(self, datos: Union[List, Tuple, pd.DataFrame], ventana: int = 2):
         '''
         PromedioMovil(datos(df,list,tuple), ventana:int, periodos:int(1))\n
         Calcula el promedio móvil simple de una serie de datos.\n
         Argumentos:\n
         datos: una lista, tupla o DataFrame con los datos de la serie.
         ventana: un entero que indica el tamaño de la ventana de promedio móvil.
-        periodos: un entero opcional que indica el número de periodos a pronosticar.
-                    Por defecto es 1.
         Ejemplo:\n
         datos = [1, 2, 3, 4, 5, 6]
         df= pd.DataFrame(datos)
-        pm = PromedioMovil(df, ventana=4, pronostico=3)
+        pm = PromedioMovil(df, ventana=4)
         pm.calcular_promedio_movil()
         print(pm.resultado)
-        pm.graficar(
+        pm.graficar()
         '''
         self.datos = datos
         self.ventana = ventana
-        self.pronostico_periodos = pronostico
-        self.titulo_grafico = f'Promedio móvil ({self.ventana} periodos, {self.pronostico_periodos} periodos pronosticados)'
+        self.titulo_grafico = f'Promedio móvil (Periodos promediados={self.ventana})'
         self.nombre_modelo = 'Promedio movil'
 
     
@@ -50,7 +47,8 @@ class PromedioMovil():
         self.pronostico_historico = pronostico.copy()
         return self.pronostico_historico
 
-    def Pronosticar(self):
+    def Pronosticar(self, predecir: int = 1):
+        self.pronostico_periodos = predecir
         # Agregar pronsoticos
         n = len(self.pronostico_historico)
         for i in range(self.pronostico_periodos):
@@ -58,11 +56,9 @@ class PromedioMovil():
         self.pronostico = self.pronostico[self.pronostico.index > self.pronostico_historico.index.max()]
         return self.pronostico
 
-df = pd.DataFrame([3,4,6,6,5,8,9,8,9,8,8,7,6,6,6,5,4,3,4,5,4,5,6])
-pm = PromedioMovil(df, pronostico=4)
+pm = PromedioMovil(df)
 print(pm.Calcular())
-print(pm.Pronosticar())
-
+print(pm.Pronosticar(predecir=5))
 
 class PromedioMovilPonderado():
     def __init__(self, datos: Union[List, Tuple, pd.DataFrame], ventana: int = None, pesos: List[float] = None):
@@ -93,7 +89,6 @@ class PromedioMovilPonderado():
         # Comprobación de longitudes y tamaños similares
         if ventana is None and pesos is None:
             raise TypeError("No ingreso pesos ni tamaño de la ventana válido.")
-        
         if ventana is not None and pesos is not None:
             if ventana != len(pesos):
                 raise TypeError("Tamaño de pesos y ventana distintos.")
@@ -124,12 +119,12 @@ class PromedioMovilPonderado():
             vector_historico = np.array(self.historico.iloc[:, 0])[i-self.ventana:i]
             producto_punto = np.dot(vector_historico, vector_pesos)
             pronostico_pmp = np.append(pronostico_pmp, producto_punto)
+        pronostico_pmp = [None for _ in range(self.ventana)] + list(pronostico_pmp[self.ventana::])
         self.pronostico_historico = pd.DataFrame(pronostico_pmp)
-        print(type(self.pronostico_historico))
         return self.pronostico_historico
     
     def Pronosticar(self, predecir: int=1):
-        self.titulo_grafico = f'Promedio móvil ponderado ({self.pesos} pesos, {predecir} periodos pronosticados)'
+        self.titulo_grafico = f'Promedio móvil ponderado (Pesos={self.pesos})'
         self.pronostico = self.historico.iloc[-self.ventana::,:]
         pronostico_pmp = np.array(self.historico.iloc[:, 0])[-self.ventana::]
         vector_pesos = np.array(self.pesos)
@@ -146,10 +141,8 @@ class PromedioMovilPonderado():
 
 # Prueba
 pmp = PromedioMovilPonderado(df, ventana=4, pesos=[0.1, 0.2, 0.3, 0.4])
-print('-'*50)
 print(pmp.Calcular())
-print(pmp.Pronosticar(predecir=3))
-
+print(pmp.Pronosticar(predecir=5))
 
 class RegresionLinealSimple():
     def __init__(self, datos: Union[List, Tuple, pd.DataFrame]):
@@ -213,7 +206,7 @@ df= pd.DataFrame([3,4,6,6,5,8,9,8,9,8,8,7,6,6,6,5,4,3,4,5,4,5,6])
 reg = RegresionLinealSimple(df)
 print(reg.Calcular())
 print(reg.Ecuacion())
-print(reg.Pronosticar([25,26,28,30]))
+print(reg.Pronosticar([25,26,28,29,30]))
 
 class SuavizacionExponencialSimple():
     def __init__(self, datos: Union[List, Tuple, pd.DataFrame], alfa: float = None,
@@ -256,6 +249,7 @@ class SuavizacionExponencialSimple():
             nivel_t = self.nivel_inicial
         else:
             nivel_t = self.historico.iloc[0,0]
+        self.nivel_inicial = nivel_t
         # Calcular la suavización exponencial simple para el número de periodos suministrados
         self.se_simple = []
         for i in range(len(self.historico)):
@@ -275,7 +269,7 @@ class SuavizacionExponencialSimple():
             nivel_t = self.alfa * self.se_simple_pronosticado[-1] + (1-self.alfa) * nivel_t_1
             self.se_simple_pronosticado.append(nivel_t)
         self.pronostico = pd.DataFrame(self.se_simple_pronosticado[1::], index=indice)
-        self.titulo_grafico = f'Suavizacion Exponencial Simple con alfa: {self.alfa}, {predecir} peridos'
+        self.titulo_grafico = f'Suavizacion Exponencial Simple (Alfa={self.alfa} y Niv. inicial={self.nivel_inicial})'
         return self.pronostico
 
 # prueba
@@ -320,9 +314,11 @@ class SuavizacionExponencialDoble():
             raise TypeError("No se ha especificado los valores de alfa y beta.")
         elif self.alfa < 0 or self.alfa > 1 or self.beta < 0 or self.beta > 1:
             raise TypeError("Los valores de alfa y beta deben estar entre 0 y 1.")
+        self.nombre_modelo = 'Suvizacion exponencial doble'
+
     
     # Calcular historico
-    def calcular(self):
+    def Calcular(self):
         # Definir periodo de inicio de pronostioc de suavización exponencial doble
         if self.nivel_inicial is None or self.tendencia_inicial is None: 
             inicio_periodo =2
@@ -346,6 +342,8 @@ class SuavizacionExponencialDoble():
             self.nivel = [nivel_t]
             self.tendencia = [tendencia_t]
             self.valores_pronostico = [None]
+        self.nivel_inicial = nivel_t
+        self.tendencia_inicial = tendencia_t
         for i in range(inicio_periodo, len(self.historico)):
             nivel_t = self.alfa * self.historico.iloc[i,0] + (1 - self.alfa) * (self.nivel[-1] + self.tendencia[-1])
             tendencia_t = self.beta * (nivel_t - self.nivel[-1]) + (1 - self.beta) * self.tendencia[-1]
@@ -353,33 +351,28 @@ class SuavizacionExponencialDoble():
             self.nivel.append(nivel_t)
             self.tendencia.append(tendencia_t)
             self.valores_pronostico.append(pronostico_sed)
-        self.pronostico_pasado = pd.DataFrame(self.valores_pronostico, index=self.x)
-        return self.pronostico_pasado
+        self.pronostico_historico = pd.DataFrame(self.valores_pronostico, index=self.x)
+        self.pronostico_historico = self.pronostico_historico.head(len(self.historico))
+        return self.pronostico_historico
     
     # Calcular pronóstico
-    def predecir(self, periodos: int = 1):
-        self.periodos = periodos
+    def Pronosticar(self, predecir: int = 1):
+        self.periodos = predecir
         if self.nivel is None or self.tendencia is None:
             raise ValueError("La regresión aún no se ha calculado.")
-        self.pronostico = self.pronostico_pasado.copy()
-        print(self.pronostico)
+        self.pronostico = self.pronostico_historico.copy()
         # Calcular los valores de la serie suavizada para los períodos futuros
-        for i in range (1, periodos + 1):
-            print(len(self.pronostico), self.nivel[-1] + i * self.tendencia[-1])
+        for i in range (1, predecir + 1):
             self.pronostico.loc[len(self.pronostico), 0] = self.nivel[-1] + i * self.tendencia[-1]
+        self.titulo_grafico = f'Suavización exponencial doble (Alfa={self.alfa}, Beta={self.beta}, Tend. inicial={self.tendencia_inicial} y  Niv. incial={self.nivel_inicial})'
+        self.pronostico = self.pronostico.tail(predecir)
         return self.pronostico
-    
-    # Grafica el pronóstico
-    def graficar(self):
-        plt.figure(figsize=(12, 6))
-        plt.plot(self.historico.index, self.historico.iloc[:, 0], label='Histórico')
-        plt.plot(self.pronostico.index, self.pronostico.iloc[:, 0], label='Pronóstico')
-        plt.xlabel('Fecha')
-        plt.ylabel('Valor')
-        plt.title(f'Suavización exponencial doble (alfa={self.alfa}, beta={self.beta}, {self.periodos} periodos pronosticados)')
-        plt.legend()
-        plt.show()
-    
+
+# prueba
+sed = SuavizacionExponencialDoble(df, alfa=0.8, beta=0.5, nivel_inicial=4, tendencia_inicial=2)
+print(sed.Calcular())
+print(sed.Pronosticar(predecir=5))
+
 class SuavizacionExponencialTriple():
     def __init__(self, datos: Union[List, Tuple, pd.DataFrame], alfa: float, beta: float, gamma: float,
                  tipo_nivel: str = 'adi', tipo_estacionalidad: str = 'adi', ciclo: int = None,
@@ -457,9 +450,10 @@ class SuavizacionExponencialTriple():
                 self.ciclo = ciclo
             else:
                 raise ('No es posible agrupar los datos en la cantidad de ciclos suministrado.')
+        self.nombre_modelo = 'Suvizacion exponencial triple'
 
     # Calcular histórico
-    def calcular(self):
+    def Calcular(self):
         n = len(self.y)
         # Inicializar los valores de nivel, tendencia y estacionalidad
         nivel = []
@@ -489,6 +483,12 @@ class SuavizacionExponencialTriple():
             nivel.append(nivel_actual)
             tendencia.append(tendencia_actual)
             estacionalidad.append(estacionalidad_actual)
+        # Asignar valores iniciales para modelo
+        self.nivel_inicial = nivel[0]
+        self.tendencia_inicial = tendencia[0]
+        self.estacionalidad_inicial = f"{estacionalidad[0]:.2f}"
+        # Crear leyenda grafico
+        self.titulo_grafico = f"Suavización exponencial triple (Alfa={self.alfa}, Beta={self.beta}, Gamma={self.gamma},Tend. inicial={self.tendencia_inicial}, Niv. incial={self.nivel_inicial}, Est. inicial={self.estacionalidad_inicial}, Tipo Nivel={self.tipo_nivel} y Tipo Estacionalidad={self.tipo_estacionalidad})"
         # Guardar los valores de nivel, tendencia y estacionalidad como atributos de la clase
         self.nivel = np.array(nivel)
         self.tendencia = np.array(tendencia)
@@ -497,49 +497,73 @@ class SuavizacionExponencialTriple():
         multiplicacion = np.multiply(np.ones(len(self.y)), self.tendencia )
         suma = np.add(multiplicacion, self.nivel)
         y_suavizado_real = np.multiply(self.estacionalidad[0:-self.ciclo],suma)
-        self.pronostico_pasado = pd.DataFrame(y_suavizado_real)
-        return self.pronostico_pasado
+        self.pronostico_historico = pd.DataFrame(y_suavizado_real)
+        return self.pronostico_historico
 
     # Calcular pronóstico
-    def predecir(self, periodos: int):
+    def Pronosticar(self, predecir: int):
         if self.nivel is None or self.tendencia is None or self.estacionalidad is None:
             raise ValueError("La regresión aún no se ha calculado.")
         # Calcular los valores de la serie suavizada para los períodos futuros
-        multiplicacion = np.multiply(np.arange(1, periodos + 1), self.tendencia[-1] )
+        multiplicacion = np.multiply(np.arange(1, predecir + 1), self.tendencia[-1] )
         suma = np.add(multiplicacion, self.nivel[-1])
-        y_suavizado_pronostico = np.multiply(suma, self.estacionalidad[-periodos::])
-        self.pronostico = pd.DataFrame(y_suavizado_pronostico, index=np.arange(self.x[-1] + 1, self.x[-1] + periodos + 1))
-        self.pronostico = pd.concat([self.pronostico_pasado,self.pronostico], axis=0)
+        y_suavizado_pronostico = np.multiply(suma, self.estacionalidad[-predecir::])
+        self.pronostico = pd.DataFrame(y_suavizado_pronostico, index=np.arange(self.x[-1] + 1, self.x[-1] + predecir + 1))
         return self.pronostico
-    
-    # Graficar pronóstico
-    def graficar(self):
-        plt.plot(self.historico.index, self.historico.iloc[:,0], label='Histórico')
-        plt.plot(self.pronostico.index, self.pronostico.iloc[:,0], color='orange',
-                 label='Pronostico triple con alfa,beta,gamma = '+str((self.alfa, self.beta, self.gamma)))
-        plt.xlabel('Variable independiente')
-        plt.ylabel('Variable dependiente')
-        plt.title('Suaviazación exponencial triple alfa,beta,gamma = '+str((self.alfa, self.beta, self.gamma)))
-        plt.legend()
-        plt.show()
 
-class Graficacion_suprema():
+# prueba
+set = SuavizacionExponencialTriple(df, alfa=0.9, beta=0.3, gamma=0.3, nivel_inicial=4, tendencia_inicial=2, tipo_nivel='mul', tipo_estacionalidad='mul')
+print(set.Calcular())
+print(set.Pronosticar(predecir=5))
+
+class GraficarModelos():
     def __init__(self, modelos: Union[List, Tuple]):
         self.modelos = modelos
-        ax = plt.gca()
+        fig, ax = plt.subplots()
         historico = self.modelos[0].historico
-        ax.plot(historico.index, historico[historico.columns[0]], label='Historico')
-        colores = plt.cm.get_cmap('Set1',len(modelos))
+        colores = plt.cm.get_cmap('Set2',len(modelos)) # Set4 
+        ax.plot(historico.index, historico[historico.columns[0]], linewidth=1.3, label='Historico', color='black')
         for o,modelo in enumerate(self.modelos):
             if modelo.nombre_modelo == 'Regresion lineal':
                 min = modelo.historico.index.max()+1
                 max = modelo.pronostico.index.max()
-                ax.plot(np.arange(min,max), modelo.b + modelo.m * np.arange(min,max), label=modelo.nombre_modelo, color=colores.colors[o])
-                ax.plot(np.arange(0,min), modelo.b + modelo.m * np.arange(0,min), label='Pron. '+modelo.titulo_grafico, linestyle='--', color=colores.colors[o])               
+                #ax.plot(np.arange(min,max), modelo.b + modelo.m * np.arange(min,max), label=modelo.nombre_modelo, color=colores.colors[o+1])
+                ax.plot(np.arange(min,max), modelo.b + modelo.m * np.arange(min,max), color=colores.colors[o])
+                ax.plot(np.arange(0,min), modelo.b + modelo.m * np.arange(0,min), label='Pron. '+modelo.titulo_grafico, linestyle='-.', linewidth=0.95, color=colores.colors[o])               
             else:
-                ax.plot(modelo.pronostico.index,modelo.pronostico[modelo.pronostico.columns[0]], label=modelo.nombre_modelo, color=colores.colors[o])    
-                ax.plot(modelo.pronostico_historico.index,modelo.pronostico_historico[modelo.pronostico_historico.columns[0]], linestyle='--', label='Pron. '+modelo.titulo_grafico, color=colores.colors[o])
-        plt.legend()
+                #ax.plot(modelo.pronostico.index,modelo.pronostico[modelo.pronostico.columns[0]], label=modelo.nombre_modelo, color=colores.colors[o])    
+                ax.plot(modelo.pronostico.index,modelo.pronostico[modelo.pronostico.columns[0]], color=colores.colors[o])    
+                ax.plot(modelo.pronostico_historico.index,modelo.pronostico_historico[modelo.pronostico_historico.columns[0]], linestyle='-.', linewidth=0.95, label='Pron. '+modelo.titulo_grafico, color=colores.colors[o])
+        fig.legend(fontsize='small')
         plt.show()
 
-Graficacion_suprema([reg, pm, pmp, ses])
+class ErroresModelos():
+    def __init__(self, modelos: Union[List, Tuple]):
+        self.modelos = modelos
+
+    def Calcular(self):
+        self.metricas = pd.DataFrame()
+        demanda_historica = np.array(self.modelos[0].historico[self.modelos[0].historico.columns[0]])
+        for o,modelo in enumerate(self.modelos):
+            demanda_pronsoticada = np.array(modelo.pronostico_historico[modelo.pronostico_historico.columns[0]])
+            # Error Absoluto Total (EAT)
+            EAT= np.round(np.nansum(np.abs(demanda_pronsoticada - demanda_historica)),2) 
+            self.metricas.loc[modelo.titulo_grafico,"EAT"] = EAT
+            # Error Absoluto Medio (EAM)
+            EAM= np.round(np.nanmean(np.abs(demanda_pronsoticada - demanda_historica)),2) 
+            self.metricas.loc[modelo.titulo_grafico,"EAM"] = EAM
+            # Desviacion Absoluta Media (DAM)
+            # Error Porcentual Absoluto Media (EPAM)
+            # Error Porcentual (EP)
+            # Error Porcentual Medio (EPM)
+        return self.metricas
+
+
+    
+#Modelo.loc['Modelo tal',:]
+
+Modelos = [reg, pm, pmp, ses, sed, set]
+
+print(ErroresModelos(Modelos).Calcular())
+
+GraficarModelos(Modelos)
