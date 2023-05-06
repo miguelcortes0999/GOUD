@@ -501,8 +501,7 @@ class ErroresModelos():
     def Calcular(self):
         self.metricas = pd.DataFrame()
         demanda_historica = np.array(self.modelos[0].historico[self.modelos[0].historico.columns[0]])
-        for o,modelo in enumerate(self.modelos):
-            print(modelo.nombre_modelo)
+        for modelo in self.modelos:
             demanda_pronsoticada = np.array(modelo.pronostico_historico[modelo.pronostico_historico.columns[0]])
             # Error Absoluto Total (EAT)
             EAT = np.round(np.nansum(np.abs(demanda_pronsoticada - demanda_historica)),2) 
