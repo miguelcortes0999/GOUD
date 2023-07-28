@@ -8,6 +8,35 @@ import os
 
 class PlaneacionAgregada():
     def __init__ (self):
+        '''
+        Clase para la Planificación Agregada solucionada por Programación Lineal.
+        Esta clase proporciona una herramienta para la planificación agregada de la producción 
+        mediante la resolución de un modelo de Programación Lineal. Permite cargar datos desde un archivo Excel, 
+        compilar el modelo con distintas restricciones y resolverlo para obtener la solución óptima. 
+        Además, proporciona funcionalidades para graficar los costos y las unidades de producción resultantes.\n
+        Métodos:\n
+            CrearExcel(periodos: list)
+                Crea una hoja de cálculo Excel con los periodos especificados.
+            CargarDatosExcel(nombre_archivo: str, hoja_datos: str, operarios_iniciales: int, porcen_ampli_tiem_extra: float)
+                Carga los datos desde un archivo Excel y establece parámetros iniciales para la planificación.
+            CompilarModelo(res_mano_obra_constante: bool, res_inventario_cero: bool, res_subcontratacion: bool, res_tiempo_suplementario: bool)
+                Compila el modelo de programación lineal con las restricciones indicadas.
+            SolucionarModelo(excel: bool)
+                Resuelve el modelo de programación lineal y devuelve las variables de decisión.
+            GraficarCostos()
+                Grafica los costos resultantes de la planificación.
+            GraficarUnidades()
+                Grafica las unidades de producción resultantes de la planificación.
+        Ejemplo:\n
+            modelo = PlaneacionAgregada()
+            modelo.CrearExcel(periodos=['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'])
+            modelo.CargarDatosExcel('Base GOUD Modelo Planeacion Agregada.xlsx', 'Datos planeacion', operarios_iniciales=9, porcen_ampli_tiem_extra=0.3)
+            modelo.CompilarModelo(res_mano_obra_constante=False, res_inventario_cero=False, res_subcontratacion=False, res_tiempo_suplementario=False)
+            var1, var2, var3, var4 = modelo.SolucionarModelo(excel=True)
+            modelo.GraficarCostos()
+            modelo.GraficarUnidades()
+        '''
+
         pass
 
     def CrearExcel(self, numero_prodcutos: int = 2, periodos: list = True, ruta_excel : str = True):
@@ -285,25 +314,3 @@ class PlaneacionAgregada():
             self.CostosProductosResultado[pr].T.sum().plot(kind='line', ax=ax, color='grey')
             plt.title('Costos de '+pr)
         plt.show()
-
-
-modelo = PlaneacionAgregada()
-modelo.CrearExcel(periodos = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'])
-modelo.CargarDatosExcel('Base GOUD Modelo Planeacion Agregada.xlsx', 'Datos planeacion', operarios_iniciales=9, porcen_ampli_tiem_extra = 0.3)
-modelo.CompilarModelo(res_mano_obra_constante = False, res_inventario_cero = False, res_subcontratacion = False, res_tiempo_suplementario = False)
-var1, var2, var3, var4 = modelo.SolucionarModelo(excel=True)
-modelo.GraficarCostos()
-modelo.GraficarUnidades()
-
-
-print('-'*150)
-print(var1)
-print('-'*150)
-for pr in var2.keys():
-    print(var2[pr])
-
-print('-'*150)
-print(var3)
-print('-'*150)
-for pr in var4.keys():
-    print(var4[pr])
