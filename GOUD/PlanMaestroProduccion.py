@@ -25,6 +25,10 @@ class SecuenciacionProgramacionLineal():
                 'T6' : { 'M1':8   , 'M3':5   , 'M2':4   },\n
                 'T7' : { 'M3_1':9 , 'M2':2   , 'M1':5    , 'M3_2':5 },\n
                 'T8' : { 'M2_1':3 , 'M3':4   , 'M2_2':1 }}\n
+        SecuanciacionPL = SecuenciacionProgramacionLineal(tareas)
+        TiemposInicioResultado = SecuanciacionPL.tiempos_resultado
+        print(TiemposInicioResultado)
+        SecuanciacionPL.DiagramaGantt()
         '''
         self.modelo = LpProblem("modelo_secuanciacion_maquinas", sense=LpMinimize)
         self.M = 0
@@ -33,107 +37,121 @@ class SecuenciacionProgramacionLineal():
                 self.M += tareas[tarea][maquina] * 2
         self.M = int(self.M)
         self.tareas = tareas
-        self.Crear_Variables()
-        self.Restricciones_Solape_Tiempos()
-        self.Restriccion_Secuecnia()
-        self.Restricciones_Tiempo_Maximo()
-        self.Funcion_Objetivo()
+        self.CrearVariables()
+        self.RestriccionesSolapeTiempos()
+        self.RestriccionSecuencia()
+        self.RestriccionesTiempoMaximo()
+        self.FuncionObjetivo()
         self.Solucionar()
+        self.DiccionarioTiemposInicio()
 
     # Crear vairbales modelo
-    def Crear_Variables(self):
-        self.nombresTareas = list(self.tareas.keys())
-        self.nombresMaquinas = list(set([maquina.split('_')[0] for tarea in self.tareas.keys() for maquina in self.tareas[tarea]]))
-        self.nombresMaquinasTareas = dict([(tarea,list(self.tareas[tarea].keys())) for tarea in self.nombresTareas])
+    def CrearVariables(self):
+        self.nombres_tareas = list(self.tareas.keys())
+        self.nombres_maquinas = list(set([maquina.split('_')[0] for tarea in self.tareas.keys() for maquina in self.tareas[tarea]]))
+        self.nombres_maquinas_tareas = dict([(tarea,list(self.tareas[tarea].keys())) for tarea in self.nombres_tareas])
         # Crear variables Tiempos de inicio
-        self.nombresTiemposInicio = [tarea+'_'+maquina for tarea in self.nombresTareas for maquina in self.nombresMaquinasTareas[tarea]]
-        self.TiemposInicio = LpVariable.dicts("TiemposInicio", self.nombresTiemposInicio , lowBound=0, cat='Continuos')
+        self.nombres_tiempos_inicio = [tarea+'_'+maquina for tarea in self.nombres_tareas for maquina in self.nombres_maquinas_tareas[tarea]]
+        self.tiempos_inicio = LpVariable.dicts("TiemposInicio", self.nombres_tiempos_inicio , lowBound=0, cat='Continuos')
         # Crear agrupacion por Tareas
-        self.diccionarioNombresSecuencia = dict((tarea,[]) for tarea in self.nombresTareas)
-        for nombresTiemposInicio in self.nombresTiemposInicio:
-            nombresTiemposInicioSplit = nombresTiemposInicio.split('_')
-            self.diccionarioNombresSecuencia[nombresTiemposInicioSplit[0]].append(nombresTiemposInicio)
+        self.diccionario_nombres_secuencia = dict((tarea,[]) for tarea in self.nombres_tareas)
+        for nombres_tiempos_inicio in self.nombres_tiempos_inicio:
+            nombres_tiempos_inicio_split = nombres_tiempos_inicio.split('_')
+            self.diccionario_nombres_secuencia[nombres_tiempos_inicio_split[0]].append(nombres_tiempos_inicio)
         # Crear agrupacion por Maquinas
-        self.diccionarioNombresMaquinas = dict((maquina,[]) for maquina in self.nombresMaquinas)
-        for maquina in self.nombresMaquinas:
-            for nombresTiemposInicio in self.nombresTiemposInicio:
-                if maquina in nombresTiemposInicio:
-                    self.diccionarioNombresMaquinas[maquina].append(nombresTiemposInicio)
+        self.diccionario_nombres_maquinas = dict((maquina,[]) for maquina in self.nombres_maquinas)
+        for maquina in self.nombres_maquinas:
+            for nombres_tiempos_inicio in self.nombres_tiempos_inicio:
+                if maquina in nombres_tiempos_inicio:
+                    self.diccionario_nombres_maquinas[maquina].append(nombres_tiempos_inicio)
         # Crear variables Binarias de activacion
-        self.nombresBinarias = []
-        for maquina in self.nombresMaquinas:
-            self.nombresBinarias += list(combinations(self.diccionarioNombresMaquinas[maquina],2))
-        self.BinariaActivacion = LpVariable.dicts("BinariaActivacion", self.nombresBinarias , cat='Binary')
+        self.nombres_binarias = []
+        for maquina in self.nombres_maquinas:
+            self.nombres_binarias += list(combinations(self.diccionario_nombres_maquinas[maquina],2))
+        self.binaria_activacion = LpVariable.dicts("BinariaActivacion", self.nombres_binarias , cat='Binary')
     
     # Restriccion de secuenciacion
-    def Restricciones_Solape_Tiempos(self):
-        for nombresTiemposInicio in self.nombresBinarias:
-            nti1, nti2 = nombresTiemposInicio[0], nombresTiemposInicio[1] 
+    def RestriccionesSolapeTiempos(self):
+        for nombres_tiempos_inicio in self.nombres_binarias:
+            nti1, nti2 = nombres_tiempos_inicio[0], nombres_tiempos_inicio[1] 
             tnti1, tnti2 = nti1.split('_',1)[0], nti2.split('_',1)[0]
             mnti1, mnti2 = nti1.split('_',1)[1], nti2.split('_',1)[1]
             dur1, dur2 = self.tareas[tnti1][mnti1], self.tareas[tnti2][mnti2]
-            self.modelo += self.TiemposInicio[nti1] + dur1 <= self.TiemposInicio[nti2] + self.BinariaActivacion[nti1, nti2]*self.M
-            self.modelo += self.TiemposInicio[nti2] + dur2 <= self.TiemposInicio[nti1] + (1-self.BinariaActivacion[nti1, nti2])*self.M
+            self.modelo += self.tiempos_inicio[nti1] + dur1 <= self.tiempos_inicio[nti2] + self.binaria_activacion[nti1, nti2]*self.M
+            self.modelo += self.tiempos_inicio[nti2] + dur2 <= self.tiempos_inicio[nti1] + (1-self.binaria_activacion[nti1, nti2])*self.M
 
     # Restriccion de Tiempo Maximo
-    def Restricciones_Tiempo_Maximo(self):
+    def RestriccionesTiempoMaximo(self):
         self.TiempoMinimo = LpVariable("TiemposMinimo", lowBound=0, cat='Continuos')
-        for tarea in self.diccionarioNombresSecuencia.keys():
-            ultimaMaquina = self.diccionarioNombresSecuencia[tarea][-1]
+        for tarea in self.diccionario_nombres_secuencia.keys():
+            ultimaMaquina = self.diccionario_nombres_secuencia[tarea][-1]
             tnti, mnti = ultimaMaquina.split('_',1)[0], ultimaMaquina.split('_',1)[1] 
-            self.modelo += self.TiemposInicio[ultimaMaquina] + self.tareas[tnti][mnti] <= self.TiempoMinimo
+            self.modelo += self.tiempos_inicio[ultimaMaquina] + self.tareas[tnti][mnti] <= self.TiempoMinimo
     
     # Restriccion de Secuencia
-    def Restriccion_Secuecnia(self):
-        for tarea in self.diccionarioNombresSecuencia.keys():
-            for n in range(len(self.diccionarioNombresSecuencia[tarea])-1):
-                nti1, nti2 = self.diccionarioNombresSecuencia[tarea][n], self.diccionarioNombresSecuencia[tarea][n+1]
+    def RestriccionSecuencia(self):
+        for tarea in self.diccionario_nombres_secuencia.keys():
+            for n in range(len(self.diccionario_nombres_secuencia[tarea])-1):
+                nti1, nti2 = self.diccionario_nombres_secuencia[tarea][n], self.diccionario_nombres_secuencia[tarea][n+1]
                 tnti1 = nti1.split('_',1)[0]
                 mnti1 = nti1.split('_',1)[1]
-                self.modelo += self.TiemposInicio[nti1] + self.tareas[tnti1][mnti1] <= self.TiemposInicio[nti2]
+                self.modelo += self.tiempos_inicio[nti1] + self.tareas[tnti1][mnti1] <= self.tiempos_inicio[nti2]
     
     # Declaracion de Funcion objetivo
-    def Funcion_Objetivo(self):
+    def FuncionObjetivo(self):
         self.modelo += self.TiempoMinimo
 
     # Solucionar modelo
     def Solucionar(self):
-        self.status = self.modelo.solve(solver=GUROBI(msg = False))
-        if 'Optimal'== LpStatus[self.modelo.status]:
-            print('-'*5+' Modelo solucionado correctamente '+'-'*5)
+        self.status = self.modelo.solve( solver = GUROBI(msg = False) )
+        if LpStatus[self.modelo.status] == 'Optimal':
             self.horizonteTemporal = round(value(self.modelo.objective),0)
         else:
-            raise 'Porblema en factibilidad del modelo'
+            raise ValueError('Modelo en estado: '+LpStatus[self.modelo.status])
 
     # Diccionario de tiempos de inicio
-    def Diccionario_TiemposInicio(self):
-        self.tiempos = {}
+    def DiccionarioTiemposInicio(self):
+        self.tiempos_resultado = {}
         for v in self.modelo.variables():
             if 'TiemposInicio' in str(v):
                 nombre = str(v)
                 nombre = nombre.replace('TiemposInicio_','')
-                self.tiempos[nombre] = round(v.varValue,0)
-        return self.tiempos
+                self.tiempos_resultado[nombre] = round(v.varValue,0)
+        return self.tiempos_resultado
 
     # Generar Diagrama de Gantt
-    def Diagrama_Gantt(self):
+    def DiagramaGantt(self):
+        self.DiccionarioTiemposInicio()
         fig, ax = plt.subplots(1)
         plt.title('Diagrama de Gantt')
         plt.xlabel('Tiempos de inicio')
         plt.ylabel('Maquinas')
-        for tareas in self.nombresTareas:
+        for tareas in self.nombres_tareas:
             inicios = []
             maquinas = []
             duraciones = []
-            for nombreInicio in self.tiempos.keys():
+            for nombreInicio in self.tiempos_resultado.keys():
                 if tareas in nombreInicio:
-                    inicios.append(self.tiempos[nombreInicio])
+                    inicios.append(self.tiempos_resultado[nombreInicio])
                     tar, maq = nombreInicio.split('_',1)[0], nombreInicio.split('_',1)[1] 
                     duraciones.append(self.tareas[tar][maq])
                     maquinas.append(maq.split('_')[0])
             ax.barh(maquinas, duraciones, left=inicios, label=tareas)
         plt.legend(bbox_to_anchor=(1.02, 1.0), loc='upper left')
         plt.show()
+
+tareas={'T1' : { 'M1':5   , 'M2':7   , 'M3':7   },
+        'T2' : { 'M1_1':3 , 'M2_1':7 , 'M1_2':2  , 'M2_2':7 },
+        'T3' : { 'M3_1':5 , 'M2':8   , 'M3_2':9 },
+        'T4' : { 'M1':4   , 'M2':7   , 'M3':6   },
+        'T5' : { 'M2_1':5 , 'M1':6   , 'M2_2':7  , 'M3':2 },
+        'T6' : { 'M1':8   , 'M3':5   , 'M2':4   },
+        'T7' : { 'M3_1':9 , 'M2':2   , 'M1':5    , 'M3_2':5 },
+        'T8' : { 'M2_1':3 , 'M3':4   , 'M2_2':1 }}
+SecuanciacionPL = SecuenciacionProgramacionLineal(tareas)
+TiemposInicioResultado = SecuanciacionPL.tiempos_resultado
+print(TiemposInicioResultado)
+SecuanciacionPL.DiagramaGantt()
 
 # Creacion de clase Balnceo Linea Progrmacion Lineal
 class BalanceoLienaProgramacionLineal():
@@ -167,10 +185,10 @@ class BalanceoLienaProgramacionLineal():
         self.unidadesActual = produccionDiaraActual
         self.Calcular_TakeTime()
         self.Estaciones_Minimas()
-        self.Crear_Variables()
+        self.CrearVariables()
         self.Restriccion_Predecesores()
         self.Restriccion_Activaciones()
-        self.Funcion_Objetivo()
+        self.FuncionObjetivo()
         self.Solucionar()
     
     # Calcular Take time
@@ -187,7 +205,7 @@ class BalanceoLienaProgramacionLineal():
         print(self.estaciones)
     
     # Crear vairbales modelo
-    def Crear_Variables(self):
+    def CrearVariables(self):
         self.BinariaEstacion = LpVariable.dicts("BinariaEstacion", (estacion for estacion in range(self.estaciones)) , cat='Binary')
         self.BinariaTareaEstacion = LpVariable.dicts("BinariaTareaEstacion", ((tarea,estacion) for estacion in range(self.estaciones) for tarea in self.tareas.keys()) , cat='Binary')
 
@@ -283,8 +301,8 @@ class SecuenciacionReglaJhonson():
                 maquinas[1]+'-'+maquinas[2]:tareas[tarea][maquinas[1]]+tareas[tarea][maquinas[2]]}
         else:
             raise 'El numero de tareas excede las 3 posibles que soluciona regla de Jhonson'
-        self.nombresTareas = list(self.tareas.keys())
-        self.nombresMaquinas = list(list(self.tareas.values())[0].keys())
+        self.nombres_tareas = list(self.tareas.keys())
+        self.nombres_maquinas = list(list(self.tareas.values())[0].keys())
         print(self.tareas)
         self.EncontrarCombinaciones()
         self.CalcularPosibilidades()
@@ -297,14 +315,14 @@ class SecuenciacionReglaJhonson():
         while self.tareas != {} :
             self.maximo = list(list(self.tareas.values())[0].values())[0]
             for tarea in self.tareas.keys():
-                for maquina in self.nombresMaquinas:
+                for maquina in self.nombres_maquinas:
                     if self.tareas[tarea][maquina] < self.maximo:
                         self.maximo = self.tareas[tarea][maquina]
             asignacion = []
             for tarea in self.tareas.keys():
-                if self.tareas[tarea][self.nombresMaquinas[0]] == self.maximo:
+                if self.tareas[tarea][self.nombres_maquinas[0]] == self.maximo:
                     asignacion.append([tarea,'I'])
-                elif self.tareas[tarea][self.nombresMaquinas[1]] == self.maximo:
+                elif self.tareas[tarea][self.nombres_maquinas[1]] == self.maximo:
                     asignacion.append([tarea,'F'])
             tareas = list(set([tarea[0] for tarea in asignacion]))
             for tarea in tareas:
