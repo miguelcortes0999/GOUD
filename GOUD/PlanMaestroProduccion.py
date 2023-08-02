@@ -140,19 +140,6 @@ class SecuenciacionProgramacionLineal():
         plt.legend(bbox_to_anchor=(1.02, 1.0), loc='upper left')
         plt.show()
 
-tareas={'T1' : { 'M1':5   , 'M2':7   , 'M3':7   },
-        'T2' : { 'M1_1':3 , 'M2_1':7 , 'M1_2':2  , 'M2_2':7 },
-        'T3' : { 'M3_1':5 , 'M2':8   , 'M3_2':9 },
-        'T4' : { 'M1':4   , 'M2':7   , 'M3':6   },
-        'T5' : { 'M2_1':5 , 'M1':6   , 'M2_2':7  , 'M3':2 },
-        'T6' : { 'M1':8   , 'M3':5   , 'M2':4   },
-        'T7' : { 'M3_1':9 , 'M2':2   , 'M1':5    , 'M3_2':5 },
-        'T8' : { 'M2_1':3 , 'M3':4   , 'M2_2':1 }}
-SecuanciacionPL = SecuenciacionProgramacionLineal(tareas)
-TiemposInicioResultado = SecuanciacionPL.tiempos_resultado
-print(TiemposInicioResultado)
-SecuanciacionPL.DiagramaGantt()
-
 # Creacion de clase Balnceo Linea Progrmacion Lineal
 class BalanceoLienaProgramacionLineal():
     def __init__(self, tareas, produccionDiaraDeseada, produccionDiaraActual):
@@ -183,23 +170,23 @@ class BalanceoLienaProgramacionLineal():
         self.tareas = tareas
         self.unidadesDeseadas = produccionDiaraDeseada
         self.unidadesActual = produccionDiaraActual
-        self.Calcular_TakeTime()
-        self.Estaciones_Minimas()
+        self.CalcularTakeTime()
+        self.EstacionesMinimas()
         self.CrearVariables()
-        self.Restriccion_Predecesores()
-        self.Restriccion_Activaciones()
+        self.RestriccionPredecesores()
+        self.RestriccionActivaciones()
         self.FuncionObjetivo()
         self.Solucionar()
     
     # Calcular Take time
-    def Calcular_TakeTime(self):
+    def CalcularTakeTime(self):
         self.takeTime = (self.unidadesActual*60)/self.unidadesDeseadas
         for tarea in self.tareas.keys():
             if self.tareas[tarea][0] >= self.takeTime:
                 self.takeTime = self.tareas[tarea][0]
     
     # Calcular minimo de estaciones sugeridas, mas un margen
-    def Estaciones_Minimas(self):
+    def EstacionesMinimas(self):
         self.estaciones = sum([self.tareas[tarea][0] for tarea in self.tareas.keys()])/self.takeTime
         self.estaciones = int((self.estaciones//1)+1)+1 # + 1 Extra para descartar infactibilidad del modelo
         print(self.estaciones)
@@ -210,7 +197,7 @@ class BalanceoLienaProgramacionLineal():
         self.BinariaTareaEstacion = LpVariable.dicts("BinariaTareaEstacion", ((tarea,estacion) for estacion in range(self.estaciones) for tarea in self.tareas.keys()) , cat='Binary')
 
     # Restriccion de predecesores
-    def Restriccion_Predecesores(self):
+    def RestriccionPredecesores(self):
         for tarea in self.tareas.keys():
             if self.tareas[tarea][1] != '-':
                 predecesores = self.tareas[tarea][1].split('-')
@@ -218,14 +205,14 @@ class BalanceoLienaProgramacionLineal():
                     self.modelo += lpSum(self.BinariaTareaEstacion[predecesor,estacionacu] for predecesor in predecesores for estacionacu in range(0,estacion+1)) >= self.BinariaTareaEstacion[tarea,estacion]*len(predecesores) 
 
     # Restriccion Activaciones de estaciones y tareas por estacion
-    def Restriccion_Activaciones(self):
+    def RestriccionActivaciones(self):
         for estacion in range(self.estaciones):
             self.modelo += lpSum(self.BinariaTareaEstacion[tarea,estacion]*self.tareas[tarea][0] for tarea in self.tareas.keys()) <= self.takeTime*self.BinariaEstacion[estacion]
         for tarea in self.tareas.keys():
             self.modelo += lpSum(self.BinariaTareaEstacion[tarea,estacion] for estacion in range(self.estaciones)) == 1
 
     # Declaracion de Funcion objetivo
-    def Funcion_Objetivo(self):
+    def FuncionObjetivo(self):
         self.modelo += lpSum(self.BinariaEstacion[estacion] for estacion in range(self.estaciones))
 
     # Solucionar modelo multiobjetivo
@@ -241,11 +228,11 @@ class BalanceoLienaProgramacionLineal():
         for v in self.modelo.variables():
             if 'BinariaEstacion' in str(v):
                 estaciones += v.varValue
-        self.MaximoTiempoEstacion = LpVariable('MaximoTiempoEstacion', lowBound=0, cat='Continuous')
+        self.maximo_tiempo_estacion = LpVariable('MaximoTiempoEstacion', lowBound=0, cat='Continuous')
         for estacion in range(self.estaciones):
-            self.modelo += lpSum(self.BinariaTareaEstacion[tarea,estacion]*self.tareas[tarea][0] for tarea in self.tareas.keys()) <= self.MaximoTiempoEstacion
+            self.modelo += lpSum(self.BinariaTareaEstacion[tarea,estacion]*self.tareas[tarea][0] for tarea in self.tareas.keys()) <= self.maximo_tiempo_estacion
         self.modelo += lpSum(self.BinariaEstacion[estacion] for estacion in range(self.estaciones)) == estaciones 
-        self.modelo += (1/sum([self.tareas[tarea][0] for tarea in self.tareas.keys()]))*(estaciones*self.MaximoTiempoEstacion)
+        self.modelo += (1/sum([self.tareas[tarea][0] for tarea in self.tareas.keys()]))*(estaciones*self.maximo_tiempo_estacion)
         # Asignacion Maximizar Eficiencia de Linea en modelo
         self.status = self.modelo.solve(solver=GUROBI(msg = False))
         if 'Optimal'== LpStatus[self.modelo.status]:
