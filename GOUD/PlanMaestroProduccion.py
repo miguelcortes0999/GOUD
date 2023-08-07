@@ -16,13 +16,14 @@ class SecuenciacionProgramacionLineal():
     def __init__(self, tareas:dict):
         '''
         SecuenciacionProgramacionLineal(tareas: dict[str ,dict[float, ..., float]])\n
+        Argumentos:\n
         tareas: diccionario de key:tareas value:diccionarios de maquinas con duraciones 
         de cada tarea respectiva en la maquina, en caso de estar repetida la maquina en
         el proceso se debe agregar el nombre de la maquinaseguido de raya al piso y el 
         numero de la priorida, se debe ingresar en el diccionario de cada tarea las 
         maquinas en el orden que van a ser procesados
         Ejemplo:\n
-        tareas={'T1' : { 'M1':5  , 'M2':7   , 'M3':7   },\n
+        tareas = {'T1' : { 'M1':5  , 'M2':7   , 'M3':7   },\n
                 'T2' : { 'M1_1':3 , 'M2_1':7 , 'M1_2':2  , 'M2_2':7 },\n
                 'T3' : { 'M3_1':5 , 'M2':8   , 'M3_2':9 },\n
                 'T4' : { 'M1':4   , 'M2':7   , 'M3':6   },\n
