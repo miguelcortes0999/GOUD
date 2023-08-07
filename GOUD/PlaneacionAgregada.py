@@ -1,9 +1,9 @@
+from typing import List, Tuple, Dict, Optional, Union
+import matplotlib.pyplot as plt
+from gurobipy import *
 import pandas as pd
 import numpy as np
-from typing import List, Tuple, Dict, Optional, Union
 from pulp import *
-import matplotlib.pyplot as plt
-import gurobipy as grb
 import os
 
 class PlaneacionAgregada():
@@ -36,7 +36,6 @@ class PlaneacionAgregada():
             modelo.GraficarCostos()
             modelo.GraficarUnidades()
         '''
-
         pass
 
     def CrearExcel(self, numero_prodcutos: int = 2, periodos: list = True, ruta_excel : str = True):
