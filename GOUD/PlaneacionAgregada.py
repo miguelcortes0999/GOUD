@@ -9,24 +9,25 @@ import os
 class PlaneacionAgregada():
     def __init__ (self):
         '''
+        PlaneacionAgregada()\n
         Clase para la Planificación Agregada solucionada por Programación Lineal.
         Esta clase proporciona una herramienta para la planificación agregada de la producción 
         mediante la resolución de un modelo de Programación Lineal. Permite cargar datos desde un archivo Excel, 
         compilar el modelo con distintas restricciones y resolverlo para obtener la solución óptima. 
         Además, proporciona funcionalidades para graficar los costos y las unidades de producción resultantes.\n
         Métodos:\n
-            CrearExcel(periodos: list)
-                Crea una hoja de cálculo Excel con los periodos especificados.
-            CargarDatosExcel(nombre_archivo: str, hoja_datos: str, operarios_iniciales: int, porcen_ampli_tiem_extra: float)
-                Carga los datos desde un archivo Excel y establece parámetros iniciales para la planificación.
-            CompilarModelo(res_mano_obra_constante: bool, res_inventario_cero: bool, res_subcontratacion: bool, res_tiempo_suplementario: bool)
-                Compila el modelo de programación lineal con las restricciones indicadas.
-            SolucionarModelo(excel: bool)
-                Resuelve el modelo de programación lineal y devuelve las variables de decisión.
-            GraficarCostos()
-                Grafica los costos resultantes de la planificación.
-            GraficarUnidades()
-                Grafica las unidades de producción resultantes de la planificación.
+        CrearExcel(periodos: list)
+            Crea una hoja de cálculo Excel con los periodos especificados.
+        CargarDatosExcel(nombre_archivo: str, hoja_datos: str, operarios_iniciales: int, porcen_ampli_tiem_extra: float)
+            Carga los datos desde un archivo Excel y establece parámetros iniciales para la planificación.
+        CompilarModelo(res_mano_obra_constante: bool, res_inventario_cero: bool, res_subcontratacion: bool, res_tiempo_suplementario: bool)
+            Compila el modelo de programación lineal con las restricciones indicadas.
+        SolucionarModelo(excel: bool)
+            Resuelve el modelo de programación lineal y devuelve las variables de decisión.
+        GraficarCostos()
+            Grafica los costos resultantes de la planificación.
+        GraficarUnidades()
+            Grafica las unidades de producción resultantes de la planificación.\n
         Ejemplo:\n
             modelo = PlaneacionAgregada()
             modelo.CrearExcel(periodos=['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'])
@@ -39,6 +40,22 @@ class PlaneacionAgregada():
         pass
 
     def CrearExcel(self, numero_prodcutos: int = 2, periodos: list = True, ruta_excel : str = True):
+        '''
+        CrearExcel(numero_prodcutos: int = 2, periodos: list = True, ruta_excel : str = True)\n
+        Crea un archivo Excel con una estructura específica para almacenar datos de planeación agregada para productos.\n
+        Argumentos:\n
+        numero_prodcutos : int, opcional
+            Número de productos para los cuales se registrarán los datos de planeación. Valor predeterminado es 2.
+        periodos : list o bool, opcional
+            Lista de nombres de periodos o valor booleano True para usar los nombres predeterminados de los meses. Valor predeterminado es True.
+        ruta_excel : str o bool, opcional
+            Ruta del archivo Excel a crear o valor booleano True para usar la ruta y nombre de archivo predeterminados. Valor predeterminado es True.
+        Notas:
+            - Si se proporciona una lista en `periodos`, esta debe contener los nombres de los periodos en el orden deseado.
+            - La ruta del archivo Excel se debe especificar con la extensión ".xlsx" al final.
+        Ejemplo:
+            modelo.CrearExcel(numero_prodcutos=3, periodos=['Enero', 'Febrero', 'Marzo'], ruta_excel='C:/Users/User/PlanAgregado.xlsx')
+        '''
         # Verificar nombres periodos
         if periodos==True:
             self.periodos = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio',
@@ -74,6 +91,29 @@ class PlaneacionAgregada():
 
     def CargarDatosExcel(self, ruta_excel: str, hoja_datos_planeacion: str = 'Datos planeacion', porcen_ampli_tiem_extra: float = 0.25,
                         operarios_iniciales: int = 1, inventario_inicial : Union[List, Tuple, Dict] = None):
+        '''
+        Carga los datos de planeación agregada y los datos específicos de cada producto desde un archivo Excel.\n
+        Notas:
+        - La ruta del archivo Excel se debe especificar con la extensión ".xlsx" al final.
+        - El argumento `inventario_inicial` debe proporcionarse en una de las siguientes formas:
+            - Como una lista o tupla con la cantidad de inventario para cada producto en el mismo orden que aparecen en el archivo Excel.
+            - Como un diccionario donde las claves son los nombres de los productos y los valores son las cantidades de inventario correspondientes.
+        - Si no se proporciona el argumento `inventario_inicial`, se asume un inventario inicial de cero para todos los productos.\n
+        Argumentos:\n
+        ruta_excel : str 
+            Ruta del archivo Excel que contiene los datos de planeación y de los productos.
+        hoja_datos_planeacion : str, opcional
+            Nombre de la hoja en el archivo Excel que contiene los datos de planeación agregada. Valor predeterminado es 'Datos planeacion'.
+        porcen_ampli_tiem_extra : float, opcional
+            Porcentaje de ampliación del tiempo extra para producción. Valor predeterminado es 0.25 (25%).
+        operarios_iniciales : int, opcional
+            Número de operarios iniciales disponibles para la producción. Valor predeterminado es 1.
+        inventario_inicial : List, Tuple, Dict, opcional
+            Inventario inicial para cada producto. Puede ser una lista, tupla o diccionario con la cantidad de inventario para cada producto. Si no se proporciona, se asume un inventario inicial de cero para todos los productos.
+        Ejemplo:\n
+            modelo.CargarDatosExcel(ruta_excel='C:/Users/User/PlanAgregado.xlsx', hoja_datos_planeacion='Datos planeacion', porcen_ampli_tiem_extra=0.2,
+                            operarios_iniciales=2, inventario_inicial={'Producto 1': 50, 'Producto 2': 30, 'Producto 3': 20})
+        '''
         # Cargar datos de Excel
         excel = pd.ExcelFile(ruta_excel)
         self.productos = list(excel.sheet_names)
@@ -179,9 +219,36 @@ class PlaneacionAgregada():
     
     # Compilación de modelo especifico de planeación agregada
     def CompilarModelo(self, res_demanda = True, res_balanceo_operarios = True, res_contratacion_operarios = True,
-                              res_despido_operarios = True, res_unidades_t_normal = True, res_unidades_t_extra = True, 
-                              res_unidades_maximas_subcontratacion = True, res_mano_obra_constante = False, res_inventario_cero = False,
-                              res_subcontratacion = False, res_tiempo_suplementario = False):
+                        res_despido_operarios = True, res_unidades_t_normal = True, res_unidades_t_extra = True, 
+                        res_unidades_maximas_subcontratacion = True, res_mano_obra_constante = False, res_inventario_cero = False,
+                        res_subcontratacion = False, res_tiempo_suplementario = False):
+        '''
+        CompilarModelo(res_demanda = True, res_balanceo_operarios = True, res_contratacion_operarios = True,
+                        res_despido_operarios = True, res_unidades_t_normal = True, res_unidades_t_extra = True, 
+                        res_unidades_maximas_subcontratacion = True, res_mano_obra_constante = False, res_inventario_cero = False,
+                        res_subcontratacion = False, res_tiempo_suplementario = False)
+        Compila el modelo de programación lineal (LP) para la planeación agregada.
+        Notas:\n
+            - Esta función agrega las restricciones y genera la función objetivo para el modelo de programación lineal (LP) para la planeación agregada.
+            - Las restricciones se agregan según los valores de los argumentos, es decir, si un argumento es False, la restricción correspondiente no se agrega al modelo.
+            - La función objetivo se genera en función de los costos de producción, tiempo extra, subcontratación, inventario, contratación y despido de operarios.\n
+        Argumentos:\n
+            res_demanda (bool, opcional): Indica si se deben agregar las restricciones de demanda para cada producto. Valor predeterminado es True.
+            res_balanceo_operarios (bool, opcional): Indica si se deben agregar las restricciones de balanceo de operarios. Valor predeterminado es True.
+            res_contratacion_operarios (bool, opcional): Indica si se deben agregar las restricciones de contratación de operarios. Valor predeterminado es True.
+            res_despido_operarios (bool, opcional): Indica si se deben agregar las restricciones de despido de operarios. Valor predeterminado es True.
+            res_unidades_t_normal (bool, opcional): Indica si se deben agregar las restricciones de tiempo normal de producción para cada producto. Valor predeterminado es True.
+            res_unidades_t_extra (bool, opcional): Indica si se deben agregar las restricciones de tiempo extra de producción para cada producto. Valor predeterminado es True.
+            res_unidades_maximas_subcontratacion (bool, opcional): Indica si se deben agregar las restricciones de máximas unidades subcontratadas para cada producto. Valor predeterminado es True.
+            res_mano_obra_constante (bool, opcional): Indica si se debe agregar la restricción de mantener constante la mano de obra. Valor predeterminado es False.
+            res_inventario_cero (bool, opcional): Indica si se debe agregar la restricción de inventario cero. Valor predeterminado es False.
+            res_subcontratacion (bool, opcional): Indica si se debe agregar la restricción de subcontratación. Valor predeterminado es False.
+            res_tiempo_suplementario (bool, opcional): Indica si se debe agregar la restricción de tiempo suplementario. Valor predeterminado es False.
+        Ejemplo:\n
+            modelo.CompilarModelo(res_demanda=True, res_balanceo_operarios=True, res_contratacion_operarios=True, res_despido_operarios=True,
+                                    res_unidades_t_normal=True, res_unidades_t_extra=True, res_unidades_maximas_subcontratacion=True,
+                                    res_mano_obra_constante=True, res_inventario_cero=True, res_subcontratacion=True, res_tiempo_suplementario=True)
+        '''
         self.CrearVariablesModelo()
         if res_demanda:
             self.RestriccionesDemanda()
@@ -264,6 +331,20 @@ class PlaneacionAgregada():
 
     # Solucionar modelo de progrmación lineal de planeación agregada
     def SolucionarModelo(self, excel = False):
+        '''
+        SolucionarModelo(excel = False)\n
+        Notas:
+        - Esta función resuelve el modelo de programación lineal (LP) previamente compilado para la planeación agregada.
+        - Si el modelo no encuentra una solución óptima, se lanza una excepción con un mensaje indicando el estado del modelo.
+        - Después de resolver el modelo, se generan informes de resultados para las unidades y costos generales, así como para cada producto.
+        - Si el argumento `excel` es True, se generará un archivo Excel con los informes de resultados.
+        Resuelve el modelo de programación lineal (LP) para la planeación agregada y genera informes de resultados.
+        Argumentos:\n
+        excel : bool, opcional
+            Indica si se debe generar un archivo Excel con los resultados. Valor predeterminado es False.\n
+        Ejemplo:\n
+            modelo.SolucionarModelo(excel=False) # tupla de salida en 4 variables
+        '''
         self.modelo.solve( solver = GUROBI(msg = False))
         #self.modelo.solve( )
         if LpStatus[self.modelo.status] != 'Optimal':
@@ -286,6 +367,17 @@ class PlaneacionAgregada():
             
     # Graficar valores de unidades estimados por modelo
     def GraficarUnidades(self):
+        '''
+        GraficarUnidades()\n
+        Genera gráficos de barras apiladas y líneas para visualizar las cantidades generales y por producto resultantes del modelo.\n
+        Notas:\n
+        - Esta función genera gráficos de barras apiladas y líneas para visualizar las cantidades generales y por producto resultantes del modelo de programación lineal (LP) resuelto previamente.
+        - Se generan dos gráficos para cada producto: uno para las cantidades generales y otro para las cantidades por producto.
+        - Los gráficos de barras apiladas muestran las cantidades resultantes para cada período y tipo de producción (tiempo normal, tiempo extra y subcontratación).
+        - La línea gris en cada gráfico representa la suma de las cantidades de cada tipo de producción para cada período.\n
+        Ejemplo:\n
+            modelo.GraficarUnidades()
+        '''
         # Agregar barras apiladas de cada columna
         ax = self.unidades_general_resultado.plot(kind='bar', width=0.6)
         # Agregar la línea de la suma de cada fila
@@ -301,6 +393,17 @@ class PlaneacionAgregada():
 
     # Graficar costos estimados por modelo
     def GraficarCostos(self):
+        '''
+        GraficarCostos()\n
+        Genera gráficos de barras apiladas y líneas para visualizar los costos generales y por producto resultantes del modelo.\n
+        Notas:\n
+        - Esta función genera gráficos de barras apiladas y líneas para visualizar los costos generales y por producto resultantes del modelo de programación lineal (LP) resuelto previamente.
+        - Se generan dos gráficos para cada producto: uno para los costos generales y otro para los costos por producto.
+        - Los gráficos de barras apiladas muestran los costos resultantes para cada período y tipo de costo (tiempo normal, tiempo extra, subcontratación, inventario, contratación y despido de operarios).
+        - La línea gris en cada gráfico representa la suma de los costos de cada tipo para cada período.
+        Ejemplo:\n
+            modelo.GraficarCostos()
+        '''
         # Agregar barras apiladas de cada columna
         ax = self.costos_general_resultado.plot(kind='bar', width=0.6)
         # Agregar la línea de la suma de cada fila
