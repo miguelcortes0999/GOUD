@@ -9,12 +9,13 @@ class PromedioMovil():
         PromedioMovil(datos(df,list,tuple), periodos_promediados:int, periodos:int(1))\n
         Calcula el promedio móvil simple de una serie de datos.\n
         Argumentos:\n
-        datos: una lista, tupla o DataFrame con los datos de la serie.
-        periodos_promediados: un entero que indica el tamaño de la periodos_promediados de promedio móvil.
+        datos : List, Tuple, pd.DataFrame
+            Una lista, tupla o DataFrame con los datos de la serie.
+        periodos_promediados: un entero que indica el tamaño de la periodos_promediados de promedio móvil.\n
         Ejemplo:\n
-        pm = PromedioMovil(df)
-        print(pm.Calcular())
-        print(pm.Pronosticar(horizonte_pronostico=5))
+            pm = PromedioMovil(df)
+            print(pm.Calcular())
+            print(pm.Pronosticar(horizonte_pronostico=5))
         '''
         self.datos = datos
         self.periodos_promediados = periodos_promediados
@@ -52,17 +53,20 @@ class PromedioMovil():
 class PromedioMovilPonderado():
     def __init__(self, datos: Union[List, Tuple, pd.DataFrame], periodos_promediados: int = None, importancia_periodos: List[float] = None):
         '''
-        PromedioMovilPonderado(datos(df,list,tuple), periodos_promediados:int, periodos:int(1), importancia_periodos:List[float] = None)\n
+        PromedioMovilPonderado(datos(df,list,tuple), periodos_promediados:int, periodos:None, importancia_periodos:List[float] = None)\n
         Calcula el promedio móvil ponderado de una serie de datos.\n
-        Argumentos:
-        datos: una lista, tupla o DataFrame con los datos de la serie.
-        periodos_promediados: un entero que indica el tamaño de la periodos_promediados de promedio móvil.
-        importancia_periodos: una lista opcional de flotantes que indica los importancia_periodos correspondientes a cada valor en la periodos_promediados.
-                    Si no se especifica, se utilizará un promedio móvil simple.
+        Argumentos:\n
+        datos : List, Tuple, pd.DataFrame
+            Una lista, tupla o DataFrame con los datos de la serie.
+        periodos_promediados : int
+            Un entero que indica el tamaño de la periodos_promediados de promedio móvil.
+        importancia_periodos : List[float]
+            Una lista opcional de flotantes que indica los importancia_periodos correspondientes a cada valor en la periodos_promediados.
+            Si no se especifica, se utilizará un promedio móvil simple.\n
         Ejemplo:\n
-        pmp = PromedioMovilPonderado(df, periodos_promediados=4, importancia_periodos=[0.1, 0.2, 0.3, 0.4])
-        print(pmp.Calcular())
-        print(pmp.Pronosticar(horizonte_pronostico=5))
+            pmp = PromedioMovilPonderado(df, periodos_promediados=4, importancia_periodos=[0.1, 0.2, 0.3, 0.4])
+            print(pmp.Calcular())
+            print(pmp.Pronosticar(horizonte_pronostico=5))
         '''
         self.datos = datos
         # Comprobar el tipo de dato de usuario
@@ -130,12 +134,13 @@ class RegresionLinealSimple():
         RegresionLienalSimple(datos(df,list,tuple))\n
         Calcula la regresion lineal para una serie de datos.\n
         Argumentos:\n
-        datos: una lista, tupla o DataFrame con los datos de la serie (el inidce del data frame sera tomado como eje x).
+        datos : List, Tuple, pd.DataFrame
+            Una lista, tupla o DataFrame con los datos de la serie (el inidce del data frame sera tomado como eje x).\n
         Ejemplo:\n
-        reg = RegresionLinealSimple(df)
-        print(reg.Calcular())
-        print(reg.Ecuacion())
-        print(reg.Pronosticar([25,26,28,29,30]))
+            reg = RegresionLinealSimple(df)
+            print(reg.Calcular())
+            print(reg.Ecuacion())
+            print(reg.Pronosticar([25,26,28,29,30]))
         '''
         self.datos = datos
         # Comprobar el tipo de dato de usuario
@@ -183,15 +188,18 @@ class SuavizacionExponencialSimple():
     def __init__(self, datos: Union[List, Tuple, pd.DataFrame], alfa: float = None, nivel_inicial: float = None):
         '''
         SuavizacionExponencialSimple(datos(df,list,tuple), alfa:float, nivel_inicial:float)\n
-        Clase que implementa el modelo de suavización exponencial simple para horizonte_pronostico valores futuros de una serie temporal.
+        Clase que implementa el modelo de suavización exponencial simple para horizonte_pronostico valores futuros de una serie temporal.\n
         Argumentos:\n
-        datos (List, Tuple, pd.DataFrame): Serie temporal de datos.
-        alfa (float): Parámetro de suavización para la serie.
-        nivel_inicial (float): Valor inicial para la serie.
+        datos : List, Tuple, pd.DataFrame 
+            Serie temporal de datos.
+        alfa : float
+            Parámetro de suavización para la serie.
+        nivel_inicial : float 
+            Valor inicial para la serie.\n
         Ejemplo:\n
-        ses = SuavizacionExponencialSimple(df, alfa=0.2)
-        print(ses.Calcular())
-        print(ses.Pronosticar(horizonte_pronostico=5))
+            ses = SuavizacionExponencialSimple(df, alfa=0.2)
+            print(ses.Calcular())
+            print(ses.Pronosticar(horizonte_pronostico=5))
         '''
         self.datos = datos
         # Comprobar el tipo de dato de usuario
@@ -246,17 +254,22 @@ class SuavizacionExponencialDoble():
                  nivel_inicial: float = None, tendencia_inicial: float = None):
         '''
         SuavizacionExponencialDoble(datos(df,list,tuple), alfa:float, beta:float, tendencia_inicial:float, nivel_inicial:float)\n
-        Clase que implementa el modelo de suavización exponencial doble para horizonte_pronostico valores futuros de una serie temporal.
+        Clase que implementa el modelo de suavización exponencial doble para horizonte_pronostico valores futuros de una serie temporal.\n
         Argumentos:\n
-        datos (List, Tuple, pd.DataFrame): Serie temporal de datos.
-        alfa (float): Parámetro de suavización para el nivel de la serie.
-        beta (float): Parámetro de suavización para la tendencia de la serie.
-        nivel_inicial (float): Valor inicial para el nivel de la serie.
-        tendencia_inicial (float): Valor inicial para la tendencia de la serie.
+        datos : List, Tuple, pd.DataFrame
+            Serie temporal de datos.
+        alfa : float)
+            Parámetro de suavización para el nivel de la serie.
+        beta : float
+            Parámetro de suavización para la tendencia de la serie.
+        nivel_inicial : float
+            Valor inicial para el nivel de la serie.
+        tendencia_inicial : float
+            Valor inicial para la tendencia de la serie.\n
         Ejemplo:\n
-        sed = SuavizacionExponencialDoble(df, alfa=0.8, beta=0.5, nivel_inicial=4, tendencia_inicial=2)
-        print(sed.Calcular())
-        print(sed.Pronosticar(horizonte_pronostico=5))
+            sed = SuavizacionExponencialDoble(df, alfa=0.8, beta=0.5, nivel_inicial=4, tendencia_inicial=2)
+            print(sed.Calcular())
+            print(sed.Pronosticar(horizonte_pronostico=5))
         '''
         self.datos = datos
         # Comprobar el tipo de dato de usuario
@@ -339,7 +352,7 @@ class SuavizacionExponencialTriple():
         nivel_inicial=float, tendencia_inicial:float, estacionalidad_inicial: [float])\n
         Clase para implementar un modelo de suavización exponencial triple para la realización de pronósticos.\n
         Argumentos:\n
-                datos : list, tuple, pd.DataFrame
+        datos : list, tuple, pd.DataFrame
             Datos para realizar el pronóstico. Puede ser una lista, tupla o DataFrame de pandas.
         alfa : float
             Parámetro de suavización para el nivel. Debe estar entre 0 y 1.
@@ -366,11 +379,11 @@ class SuavizacionExponencialTriple():
         estacionalidad_inicial : float, optional
             Valor inicial de la estacionalidad. Si no se especifica, se calcula automáticamente como la media de
             los valores de los datos en el primer ciclo.
-            El valor por defecto es None.
+            El valor por defecto es None.\n
         Ejemplo:\n
-        set = SuavizacionExponencialTriple(df, alfa=0.9, beta=0.3, gamma=0.3, nivel_inicial=4, tendencia_inicial=2, tipo_nivel='mul', tipo_estacionalidad='mul')
-        print(set.Calcular())
-        print(set.Pronosticar(horizonte_pronostico=5))
+            set = SuavizacionExponencialTriple(df, alfa=0.9, beta=0.3, gamma=0.3, nivel_inicial=4, tendencia_inicial=2, tipo_nivel='mul', tipo_estacionalidad='mul')
+            print(set.Calcular())
+            print(set.Pronosticar(horizonte_pronostico=5))
         '''
         self.datos = datos
         # Comprobar el tipo de dato de usuario
@@ -464,6 +477,17 @@ class SuavizacionExponencialTriple():
 
 class GraficarModelos():
     def __init__(self, modelos: Union[List, Tuple]):
+        '''
+        GraficarModelos( modelos:[list, tuple] )\n
+        Clase que permite visualizar gráficamente los resultados de varios modelos de pronóstico junto con la serie histórica real.\n
+        Argumentos:\n
+        modelos : List, Tuple
+            Lista o tupla de modelos de pronóstico, cada uno de ellos debe tener atributos 'historico', 'pronostico' y 'pronostico_historico'.\n
+        Ejemplo:\n
+            modelos = [modelo1, modelo2, modelo3]
+            graficador = GraficarModelos(modelos)
+            graficador.mostrar_grafico()
+        '''
         self.modelos = modelos
         fig, ax = plt.subplots()
         historico = self.modelos[0].historico
@@ -485,6 +509,27 @@ class GraficarModelos():
 
 class ErroresModelos():
     def __init__(self, modelos: Union[List, Tuple]):
+        '''
+        ErroresModelos( modelos:[list, tuple] )\n  
+        Clase que calcula diversas métricas de error para modelos de pronóstico comparando sus resultados con la demanda histórica real.\n
+        Métricas calculadas:\n
+        Error Absoluto Total (EAT): La suma de los valores absolutos de las diferencias entre las demandas pronosticadas y las demandas históricas.
+        Error Absoluto Medio (EAM): El promedio de los valores absolutos de las diferencias entre las demandas pronosticadas y las demandas históricas.
+        Error Absoluto Máximo (EAMX): El valor absoluto más grande de las diferencias entre las demandas pronosticadas y las demandas históricas.
+        Error Cuadrático Medio (ECM): El promedio de los errores al cuadrado entre las demandas pronosticadas y las demandas históricas.
+        Error Porcentual Medio (EPM): El promedio de los errores porcentuales entre las demandas pronosticadas y las demandas históricas.
+        Error Porcentual Absoluto Medio (EPAM): El promedio de los valores absolutos de los errores porcentuales entre las demandas pronosticadas y las demandas históricas.
+        Desviación Absoluta Media (DAM): La mediana de las diferencias entre las demandas pronosticadas y las demandas históricas.
+        Señal de Rastreo (SR): La relación entre el promedio de los errores absolutos y la desviación estándar de los errores absolutos.\n
+        Argumentos:\n
+        modelos : List, Tuple 
+            Lista o tupla de modelos de pronóstico, cada uno de ellos debe tener atributos 'historico' y 'pronostico_historico'.
+        Ejemplo:\n
+            modelos = [modelo1, modelo2, modelo3]
+            errores = ErroresModelos(modelos)
+            resultados = errores.Calcular()
+            print(resultados)
+        '''
         self.modelos = modelos
         self.diccioanrio = {
             'EAT':'Error Absoluto Total',
@@ -496,6 +541,7 @@ class ErroresModelos():
             'DAM':'Desviacion Absoluta Media',
             'SR':'Señal de Rastreo'
         }
+        self.Calcular()
 
     # Calcular errores
     def Calcular(self):
