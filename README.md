@@ -21,9 +21,16 @@ GOUD
 1.2.4. Planeacion Agregada De Trabajo Mixto (Programación Lineal)
 1.3. Progrmaación De La Producción (MPS) 
 1.3.1. Balanceo De Línea
-1.3.2. Secuenciación De Trabajos
-1.3.2.1. Jhonson
-1.3.2.2. Branch And Bound
-1.3.2.3. CDS
-1.3.2.4. Programación Lineal
-	
+1.3.1. Reglas de secuenciación
+1.3.1.1. SPT: Tiempo de Procesamiento más Corto
+1.3.1.2. LPT: Tiempo de Procesamiento más Largo
+1.3.1.3. EFT: Tiempo de Finalización más Temprano
+1.3.1.4. LFT: Tiempo de Finalización más Tardío
+1.3.1.5. S/EDD: Relación Tiempo de Procesamiento-Tiempo de Entrega (Corto/Earliest Due Date)
+1.3.1.6. L/EDD: Relación Tiempo de Procesamiento-Tiempo de Entrega (Largo/Earliest Due Date)
+1.3.1.7. HLC: Costo de Retraso más Alto
+1.3.3. Secuenciación De Trabajos
+1.3.3.1. Jhonson
+1.3.3.2. Branch And Bound
+1.3.3.3. CDS
+1.3.3.4. Programación Lineal
