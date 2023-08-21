@@ -1,4 +1,3 @@
-#Improtar librerias necesarias
 from typing import List, Tuple, Dict, Optional, Union
 from openpyxl.styles import Font, Alignment
 from itertools import combinations
@@ -267,25 +266,6 @@ class SecuenciacionProgramacionLineal():
         plt.legend(bbox_to_anchor=(1.02, 1.0), loc='upper left')
         plt.show()
 
-tareas = {'T1' : { 'A_1':1, 'C':6   , 'A_2':4 , 'B':2   },
-        'T2' : { 'E':1 , 'B':1 , 'C':10  , 'F':5 },
-        'T3' : { 'F':3 , 'C':6   , 'E':3 },
-        'T4' : { 'A':4   , 'F_1':10   , 'C':10 , 'D':2, 'F_2':4   },
-        'T5' : { 'D':9 , 'F':9   , 'B':7  , 'E':5 },
-        'T6' : { 'A':7   , 'B':8   , 'C':6 , 'D':9 , 'E':8 ,'F':6   },
-        'T7' : { 'B_1':12 , 'F':8   , 'B_2': 5   , 'D_1':3 , 'E':6 },
-        'T8' : { 'F':3 , 'B':5   , 'A': 3   , 'C':6}}
-importancia = {'T1':2, 'T2':3, 'T3':4, 'T4':1, 'T5':1, 'T6':50, 'T7':300, 'T8': 2}
-timepos_entrega = {'T1':50, 'T2':50, 'T3':50, 'T4':50, 'T5':50, 'T6':50, 'T7':50, 'T8': 50}
-SecuanciacionPL = SecuenciacionProgramacionLineal(tareas = tareas, tiempos_entrega = timepos_entrega, importancia = importancia, funcion_objetivo = 'tiempo total procesamiento', verbose = False)
-tiempos_resultado, resumen_tareas, resumen_estaciones, tiempo_procesamiento_minimo = SecuanciacionPL.ResumenResultados()
-print(tiempos_resultado)
-print(resumen_tareas)
-print(resumen_estaciones)
-print(tiempo_procesamiento_minimo)
-SecuanciacionPL.DiagramaGantt()
-
-# Blanceo de linea progrmacion lineal
 class BalanceoLienaProgramacionLineal():
     def __init__(self, tareas, produccionDiaraDeseada, produccionDiaraActual):
         '''
@@ -404,23 +384,7 @@ class BalanceoLienaProgramacionLineal():
                 nombre = nombre.split(',')
                 self.activacion_estacion[nombre[0]] = 'Estacion '+ str(int(nombre[1])+1)
         return self.activacion_estacion
-
-#tareas={'A' : [12   , '-'],
-#        'B' : [24   , '-'],
-#        'C' : [42   , 'A'] ,
-#        'D' : [6    , 'A-B'],
-#        'E' : [18   , 'B'],
-#        'F' : [6.6  , 'C'],
-#        'G' : [19.2 , 'C'],
-#        'H' : [36   , 'C-D'],
-#        'I' : [16.2 , 'F-G-H'],
-#        'J' : [22.8 , 'E-H'],
-#        'K' : [30   , 'I-J'] }
-#produccionDiaraEsperada =  500
-#tiempoFuncionamientoDiario = 500
-#BalnceoLinea = BalanceoLienaProgramacionLineal(tareas, produccionDiaraEsperada, tiempoFuncionamientoDiario)
-#print( BalnceoLinea.Diccionario_Estaciones() )
-#print(BalnceoLinea.take_time)
+    
 
 class SecuenciacionReglaJhonson():
     '''
@@ -542,25 +506,6 @@ class SecuenciacionReglaJhonson():
                 else:
                     matriz[i][j] = max([matriz[i][j-1],matriz[i-1][j]]) + duraciones[i][j]
         return matriz[i][j]
-
-#tareas={'T1' :{'M1':3,'M2':7,'M3':3},
-#        'T2' :{'M1':1,'M2':4,'M3':9},
-#        'T3' :{'M1':7,'M2':6,'M3':3},
-#        'T4' :{'M1':2,'M2':3,'M3':1},
-#        'T5' :{'M1':3,'M2':2,'M3':4},
-#        'T6' :{'M1':1,'M2':8,'M3':7},
-#        'T7' :{'M1':9,'M2':1,'M3':8},
-#        'T8' :{'M1':1,'M2':5,'M3':8},
-#        'T9' :{'M1':8,'M2':2,'M3':9},
-#        'T10':{'M1':6,'M2':1,'M3':7}}
-#SecuneciaJhonson = SecuenciacionReglaJhonson(tareas)
-#print(SecuneciaJhonson.combinaciones)
-#print('-'*80)
-#print(SecuneciaJhonson.secuencias_posibles)
-#print('-'*80)
-#print(SecuneciaJhonson.secuencias)
-#print('-'*80)
-#print(SecuneciaJhonson.tiempos_procesos_secuencias)
 
 class SecuenciacionReglaCDS():
     def __init__(self, tareas):
@@ -692,27 +637,6 @@ class SecuenciacionReglaCDS():
                 else:
                     matriz[i][j] = max([matriz[i][j-1],matriz[i-1][j]]) + duraciones[i][j]
         return matriz[i][j]
-
-#tareas={'T1' :{'M1':3,'M2':7,'M3':3,'M4':3},
-#        'T2' :{'M1':1,'M2':4,'M3':9,'M4':9},
-#        'T3' :{'M1':7,'M2':6,'M3':3,'M4':1},
-#        'T4' :{'M1':2,'M2':3,'M3':1,'M4':7},
-#        'T5' :{'M1':3,'M2':2,'M3':4,'M4':2},
-#        'T6' :{'M1':1,'M2':8,'M3':7,'M4':9},
-#        'T7' :{'M1':9,'M2':1,'M3':8,'M4':4},
-#        'T8' :{'M1':1,'M2':5,'M3':8,'M4':1},
-#        'T9' :{'M1':8,'M2':2,'M3':9,'M4':4},
-#        'T10':{'M1':6,'M2':1,'M3':7,'M4':4}}
-#cds = SecuenciacionReglaCDS(tareas)
-#print(cds.diccioanrio_tareas)
-#print('-'*100)
-#print(cds.combinaciones)
-#print('-'*100)
-#print(cds.secuencias_posibles)
-#print('-'*100)
-#print(cds.secuencias)
-#print('-'*100)
-#print(cds.tiempos_procesos_secuencias)
 
 class BranchAndBounds():
     def __init__(self, tareas : Dict):
@@ -942,27 +866,6 @@ class BranchAndBounds():
         plt.legend(bbox_to_anchor=(1.02, 1.0), loc='upper left')
         plt.show()
 
-#tareas={
-#'T1' :{'M1':2,'M2':1,'M3':2},
-#'T2' :{'M1':1,'M2':5,'M3':1},
-#'T3' :{'M1':4,'M2':1,'M3':2},
-#'T4' :{'M1':1,'M2':2,'M3':3},
-#'T5' :{'M1':3,'M2':1,'M3':1},
-#'T6' :{'M1':1,'M2':7,'M3':1},
-#'T7' :{'M1':4,'M2':3,'M3':3},
-#'T8' :{'M1':3,'M2':2,'M3':4}}
-#bab = BranchAndBounds(tareas)
-#print(bab.CalcularSecuencia(verbose = False))
-#bab.CrearExcelResultado()
-#for key in bab.ecuaciones_bifurcaciones.keys():
-#    print(key)
-#    print(bab.ecuaciones_bifurcaciones[key])
-#for key in bab.resultado_bifuraciones.keys():
-#    print(key)
-#    print(bab.resultado_bifuraciones[key])
-#bab.CrearExcelResultado()
-#bab.DiagramaGantt()
-
 class ReglasSecuenciacion():
     def __init__(self, tareas : Dict):
         '''
@@ -1047,22 +950,3 @@ class ReglasSecuenciacion():
         self.diccionario_reglas_secuanciacion['relacion tiempo procesamiento con entrega mas largo'] = self.RelacionProcesameintoEntregaLargo()
         self.diccionario_reglas_secuanciacion['costo retraso mas alto'] = self.CostoRestrasoAlto()
         return self.diccionario_reglas_secuanciacion
-
-#tareas={'T1' : {'duraciones':1, 'timpos inicio':4  , 'tiempo entrega':8,  'costos retraso':1},
-#        'T2' : {'duraciones':5, 'timpos inicio':1  , 'tiempo entrega':12, 'costos retraso':8},
-#        'T3' : {'duraciones':1, 'timpos inicio':2  , 'tiempo entrega':29, 'costos retraso':7},
-#        'T4' : {'duraciones':2, 'timpos inicio':3  , 'tiempo entrega':15, 'costos retraso':5},
-#        'T5' : {'duraciones':1, 'timpos inicio':5  , 'tiempo entrega':28, 'costos retraso':3},
-#        'T6' : {'duraciones':7, 'timpos inicio':10 , 'tiempo entrega':19, 'costos retraso':1},
-#        'T7' : {'duraciones':3, 'timpos inicio':6  , 'tiempo entrega':15, 'costos retraso':9},
-#        'T8' : {'duraciones':2, 'timpos inicio':8  , 'tiempo entrega':9,  'costos retraso':4}}
-#rs = ReglasSecuenciacion(tareas)
-#print(rs.TiempoProcesamientoCorto())
-#print(rs.TiempoProcesamientoLargo())
-#print(rs.TiempoFinalizacionTemprano())
-#print(rs.TiempoFinalizacionTardio())
-#print(rs.RelacionProcesameintoEntregaCorto())
-#print(rs.RelacionProcesameintoEntregaLargo())
-#print(rs.CostoRestrasoAlto())
-#for nom, val in rs.ReglasSecuenciacion().items():
-#    print(nom, '\n', val)
