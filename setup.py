@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 
 HERE = pathlib.Path(__file__).parent
 
-VERSION = '0.3.1' #Muy importante, deberéis ir cambiando la versión de vuestra librería según incluyáis nuevas funcionalidades
+VERSION = '0.4.0' #Muy importante, deberéis ir cambiando la versión de vuestra librería según incluyáis nuevas funcionalidades
 PACKAGE_NAME = 'GOUD' #Debe coincidir con el nombre de la carpeta 
 AUTHOR = 'miguelcortes0999'
 AUTHOR_EMAIL = 'miguelcortes0999@gmail.com'
@@ -16,7 +16,7 @@ LONG_DESC_TYPE = "text/markdown"
 
 
 #Paquetes necesarios para que funcione la libreía. Se instalarán a la vez si no lo tuvieras ya instalado
-INSTALL_REQUIRES = ['pandas','pulp','numpy','gurobipy','matplotlib','openpyxl','itertools']
+INSTALL_REQUIRES = ['pandas','pulp','numpy','gurobipy','matplotlib','openpyxl']
 
 setup(
     name=PACKAGE_NAME,
