@@ -16,7 +16,7 @@ LONG_DESC_TYPE = "text/markdown"
 
 
 #Paquetes necesarios para que funcione la libreía. Se instalarán a la vez si no lo tuvieras ya instalado
-INSTALL_REQUIRES = ['pandas','pulp','numpy','gurobipy','matplotlib','openpyxl']
+INSTALL_REQUIRES = ['pandas','pulp','numpy','gurobipy','matplotlib','openpyxl','networkx']
 
 setup(
     name=PACKAGE_NAME,
