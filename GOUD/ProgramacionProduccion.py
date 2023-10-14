@@ -4,11 +4,15 @@ from itertools import combinations
 from itertools import permutations
 import matplotlib.pyplot as plt
 from gurobipy import *
+import networkx as nx
 import pandas as pd
 import numpy as np
 from pulp import *
 import openpyxl
 import os
+
+# Deshabilitar todas las advertencias de tipo UserWarning a nivel global
+warnings.filterwarnings("ignore", category=UserWarning)
 
 class SecuenciacionProgramacionLineal():
     def __init__(self, tareas : dict, funcion_objetivo : str = 'Tiempo Total Procesamiento', tiempos_entrega : dict = None, importancia : dict = None, verbose = False):
@@ -294,10 +298,11 @@ class BalanceoLineaProgramacionLineal():
                     'I' : [16.2 , 'F-G-H'],\n
                     'J' : [22.8 , 'E-H'],\n
                     'K' : [30   , 'I-J'] }\n
-            produccionDiaraDeseada =  500\n
+            produccionDiariaDeseada =  500\n
             tiempoFuncionamientoDiario = 500\n
-            BalnceoLinea = BalanceoLineaProgramacionLineal(tareas, produccionDiariaEsperada, tiempoFuncionamientoDiario)
-            print( BalnceoLinea.Diccionario_Estaciones() )
+            BalnceoLinea = BalanceoLineaProgramacionLineal(tareas, produccionDiariaDeseada, tiempoFuncionamientoDiario)\n
+            print( BalnceoLinea.DiccionarioEstaciones() )\n
+            BalnceoLinea.Grafo( estaciones=True)
         '''
         self.modelo = LpProblem("modelo_balanceo_linea", sense=LpMinimize)
         self.tareas = tareas
@@ -348,6 +353,17 @@ class BalanceoLineaProgramacionLineal():
     def FuncionObjetivo(self):
         self.modelo += lpSum(self.binaria_estacion[estacion] for estacion in range(self.estaciones))
 
+    # Diccionario tareas por estacion
+    def DiccionarioEstaciones(self):
+        self.activacion_estacion = {}
+        for v in self.modelo.variables():
+            if 'BinariaTareaEstacion' in str(v) and v.varValue>0:
+                nombre = str(v)
+                nombre = nombre.replace('BinariaTareaEstacion_','').replace('(','').replace(')','').replace('_','').replace("'",'')
+                nombre = nombre.split(',')
+                self.activacion_estacion[nombre[0]] = 'Estacion '+ str(int(nombre[1])+1)
+        return self.activacion_estacion
+
     # Solucionar modelo multiobjetivo
     def Solucionar(self):
         # Modelo Uso minimo de estaciones
@@ -371,20 +387,57 @@ class BalanceoLineaProgramacionLineal():
         if 'Optimal'== LpStatus[self.modelo.status]:
             print('-'*5+' Modelo solucionado correctamente '+'-'*5)
             self.horizonteTemporal = round(value(self.modelo.objective),0)
+            self.DiccionarioEstaciones()
         else:
             raise 'Porblema en factibilidad del modelo'
     
-    # Diccionario tareas por estacion
-    def Diccionario_Estaciones(self):
-        self.activacion_estacion = {}
-        for v in self.modelo.variables():
-            if 'BinariaTareaEstacion' in str(v) and v.varValue>0:
-                nombre = str(v)
-                nombre = nombre.replace('BinariaTareaEstacion_','').replace('(','').replace(')','').replace('_','').replace("'",'')
-                nombre = nombre.split(',')
-                self.activacion_estacion[nombre[0]] = 'Estacion '+ str(int(nombre[1])+1)
-        return self.activacion_estacion
-    
+    def Grafo(self, estaciones=False):
+        # Crear un grafo dirigido
+        G = nx.DiGraph()
+        # Agregar nodos al grafo
+        for tarea, datos in self.tareas.items():
+            duracion, dependencias = datos
+            G.add_node(tarea, duracion=duracion)
+        # Agregar arcos entre las tareas dependientes
+        for tarea, datos in self.tareas.items():
+            dependencias = datos[1]
+            if dependencias != '-':
+                dependencias = dependencias.split('-')
+                for dependencia in dependencias:
+                    G.add_edge(dependencia, tarea)
+        # Calcular el orden topológico
+        orden_topologico = list(nx.topological_sort(G))
+        nuevo_diccionario = {clave: valor[1].split('-') for clave, valor in self.tareas.items()}
+        orden_topologico.reverse()
+        # Crear un grafo dirigido con las dependencias
+        Gaux = nx.DiGraph(nuevo_diccionario)
+        # Crear un diccionario para agrupar los nodos por capa
+        nodos_por_capa = {}
+        for nodo in orden_topologico:
+            predecesores = list(Gaux.predecessors(nodo))
+            capa = max([nodos_por_capa[pre] for pre in predecesores], default=0) + 1
+            nodos_por_capa[nodo] = capa
+        # Organizar los nodos en listas por capa
+        listas_por_capa = {}
+        for nodo, capa in nodos_por_capa.items():
+            if capa not in listas_por_capa:
+                listas_por_capa[capa] = []
+            listas_por_capa[capa].append(nodo)
+        # Crear un nuevo gráfico ordenado con spring layout
+        pos = {t: (c * -1500, p*-500) for c in listas_por_capa.keys() for p,t in enumerate(listas_por_capa[c])}
+        # Dibujar el grafo ordenado
+        if estaciones == True:
+            # Crear diccionario de estaciones si no ha sido creado
+            self.DiccionarioEstaciones()
+            # Crear dicionario de colores
+            colores_aleatorios = {nodo: "#{:02x}{:02x}{:02x}".format(np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255)) for nodo in set(self.activacion_estacion.values())}
+            diccionario_colores = {t: colores_aleatorios[self.activacion_estacion[t]] for t in self.activacion_estacion.keys()}
+            node_colors = [diccionario_colores[nodo] for nodo in G.nodes]
+            nx.draw(G, pos=pos, with_labels=True, node_size=1000, node_color=node_colors, font_size=8, font_color='black')
+        else:
+            nx.draw(G, pos=pos, with_labels=True, node_size=1000, node_color='lightblue', font_size=8, font_color='black')
+        # Mostrar el gráfico ordenado
+        plt.show()
 
 class SecuenciacionReglaJhonson():
     '''
