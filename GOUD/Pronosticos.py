@@ -172,6 +172,9 @@ class RegresionLinealSimple():
     
     # Calcular pronóstico
     def Pronosticar(self, x_nuevos: np.array):
+        for i in x_nuevos:
+            if i < 0:
+                raise ValueError("Valor negativo ingresado, no se admiten valores negativos.")
         if self.b is None or self.m is None:
             raise ValueError("La regresión aún no se ha calculado.")
         resultado = pd.DataFrame([None for x in x_nuevos],index=x_nuevos)
@@ -265,12 +268,12 @@ class SuavizacionExponencialDoble():
     tendencia_inicial : float
         Valor inicial para la tendencia de la serie.\n
     Ejemplo:\n
-        sed = SuavizacionExponencialDoble(df, alfa=0.8, beta=0.5, nivel_inicial=4, tendencia_inicial=2)
-        print(sed.Calcular())
-        print(sed.Pronosticar(horizonte_pronostico=5))
+        sed = SuavizacionExponencialDoble(df, alfa=0.8, beta=0.5, nivel_inicial=4, tendencia_inicial=2)\n
+        print(sed.Calcular())\n
+        print(sed.Pronosticar(horizonte_pronostico=5))\n
     '''
     def __init__(self, datos: Union[List, Tuple, pd.DataFrame], alfa: float = None, beta: float = None,
-                 nivel_inicial: float = None, tendencia_inicial: float = None):
+                nivel_inicial: float = None, tendencia_inicial: float = None):
         self.datos = datos
         # Comprobar el tipo de dato de usuario
         if isinstance(self.datos, pd.DataFrame):
@@ -293,11 +296,6 @@ class SuavizacionExponencialDoble():
     
     # Calcular histórico
     def Calcular(self):
-        # Definir periodo de inicio de pronostioc de suavización exponencial doble
-        if self.nivel_inicial is None or self.tendencia_inicial is None: 
-            inicio_periodo =1
-        else:
-            inicio_periodo =0
         # Inicializar la suavización exponencial doble
         if self.nivel_inicial is not None :
             nivel_t = self.nivel_inicial
@@ -309,20 +307,14 @@ class SuavizacionExponencialDoble():
             tendencia_t = self.historico.iloc[1,0] - self.historico.iloc[0,0]
         self.titulo_grafico = f'Suavización exponencial doble (Alfa={self.alfa}, Beta={self.beta}, Tend. inicial={self.tendencia_inicial} y  Niv. incial={self.nivel_inicial})'
         # Calcular la suavización exponencial doble para el número de periodos suministrados
-        if inicio_periodo == 1:
-            self.nivel = [None, nivel_t]
-            self.tendencia = [None, tendencia_t]
-            self.valores_pronostico = [None, nivel_t+tendencia_t]
-        else:
-            self.nivel = [nivel_t]
-            self.tendencia = [tendencia_t]
-            self.valores_pronostico = []
+        self.nivel = [nivel_t]
+        self.tendencia = [tendencia_t]
+        self.valores_pronostico = []
         self.nivel_inicial = nivel_t
         self.tendencia_inicial = tendencia_t
-        for i in range(inicio_periodo, len(self.historico)):
+        for i in range(0, len(self.historico)):
             nivel_t = (self.alfa * self.historico.iloc[i,0]) + (1 - self.alfa) * (self.nivel[-1] + self.tendencia[-1])
             tendencia_t = self.beta * (nivel_t - self.nivel[-1]) + (1 - self.beta) * self.tendencia[-1]
-            print(self.historico.iloc[i,0], nivel_t, tendencia_t)
             pronostico_sed = nivel_t + tendencia_t
             self.nivel.append(nivel_t)
             self.tendencia.append(tendencia_t)
@@ -427,7 +419,10 @@ class SuavizacionExponencialTriple():
         # Calcular los valores de nivel, tendencia y estacionalidad para cada período
         for i in range(n):
             # Calcular los valores suavizados
-            if i != 0:
+            if i == 0:
+                nivel_actual = self.y[0] if self.nivel_inicial is None else self.nivel_inicial
+                tendencia_actual = (self.y[1] - self.y[0]) if self.tendencia_inicial is None else self.tendencia_inicial
+            else:
                 if self.tipo_nivel == 'adi':
                     nivel_actual = self.alfa * (self.y[i] - estacionalidad[-self.ciclo]) + (1 - self.alfa) * (nivel[-1] + tendencia[-1]) 
                 elif self.tipo_nivel == 'mul':
@@ -435,9 +430,6 @@ class SuavizacionExponencialTriple():
                 else:
                     raise TypeError('El tipo de nivel no es permitido, elija entre "adi" o "mul".')    
                 tendencia_actual = self.beta * (nivel_actual - nivel[-1]) + (1 - self.beta) * tendencia[-1]
-            else:
-                nivel_actual = self.y[0] if self.nivel_inicial is None else self.nivel_inicial
-                tendencia_actual = (self.y[1] - self.y[0]) if self.tendencia_inicial is None else self.tendencia_inicial
             if self.tipo_estacionalidad == 'adi':
                 estacionalidad_actual = self.gamma * (self.y[i] - nivel_actual) + (1 - self.gamma) * estacionalidad[-self.ciclo]
             elif self.tipo_estacionalidad == 'mul':
