@@ -87,7 +87,7 @@ class PlaneacionAgregada():
         for n in range(1,numero_prodcutos+1):
             with pd.ExcelWriter(self.ruta_excel_datos_iniciales, engine='openpyxl', mode='a') as writer:
                 producto.to_excel(writer, sheet_name=str('Producto '+str(n)))
-        return '\nExcel creado exitosamente en al ruta...\n(Puede ser remplazado arhcivo con el mismo nombre)\n'
+        return 'Excel creado exitosamente en al ruta...\n(Puede ser remplazado arhcivo con el mismo nombre)'
 
     def CargarDatosExcel(self, ruta_excel: str, hoja_datos_planeacion: str = 'Datos planeacion', porcen_ampli_tiem_extra: float = 0.25,
                         operarios_iniciales: int = 1, inventario_inicial : Union[List, Tuple, Dict] = None):
