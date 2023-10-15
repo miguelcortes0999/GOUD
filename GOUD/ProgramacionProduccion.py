@@ -44,6 +44,7 @@ class SecuenciacionProgramacionLineal():
             print(resumen_tareas)
             print(resumen_estaciones)\n
             print(tiempo_procesamiento_minimo)\n
+            SecuanciacionPL.Formulacion()\n
             SecuanciacionPL.DiagramaGantt()\n
         '''
         self.modelo = LpProblem("modelo_secuanciacion_estaciones", sense=LpMinimize)
@@ -237,6 +238,10 @@ class SecuenciacionProgramacionLineal():
                 self.tiempo_procesamiento_minimo = round(v.varValue,0)
         return self.tiempos_resultado, self.resumen_tareas, self.resumen_estaciones, self.tiempo_procesamiento_minimo
 
+    def Formulacion(self):
+        with open('Formaulación.txt', 'w') as archivo:
+            archivo.write(str(self.modelo))
+
     # Generar Diagrama de Gantt
     def DiagramaGantt(self):
         '''
@@ -300,7 +305,9 @@ class BalanceoLineaProgramacionLineal():
                     'K' : [30   , 'I-J'] }\n
             tiempo_ritmo =  60\n
             BalnceoLinea = BalanceoLineaProgramacionLineal(tareas, tiempo_ritmo, objetivo = 'Tiempo muerto')\n
-            print( BalnceoLinea.DiccionarioEstaciones())\n
+            print(BalnceoLinea.DiccionarioEstaciones())\n
+            print(BalnceoLinea.Metricas())\n
+            BalnceoLinea.Formulacion()\n
             BalnceoLinea.Grafo(estaciones=True)
         '''
         self.funcion_objetivo = objetivo
@@ -328,9 +335,9 @@ class BalanceoLineaProgramacionLineal():
     def CrearVariables(self):
         self.binaria_estacion = LpVariable.dicts('BinariaEstacion', (estacion for estacion in range(self.estaciones)) , cat='Binary')
         self.binaria_tarea_estacion = LpVariable.dicts('BinariaTareaEstacion', ((tarea,estacion) for estacion in range(self.estaciones) for tarea in self.tareas.keys()) , cat='Binary')
-        self.tiempo_ciclo = LpVariable('TiempoCiclo', lowBound=0, cat='Continuos')
-        self.tiempo_ciclo_estacion = LpVariable.dicts('TiempoCicloEstacion', (estacion for estacion in range(self.estaciones)) , lowBound=0, cat='Continuos')
-        self.tiempo_muerto_estacion = LpVariable.dicts('TiempoMuerto', (estacion for estacion in range(self.estaciones)) , lowBound=0, cat='Continuos')
+        self.tiempo_ciclo = LpVariable('TiempoCiclo', lowBound=0, cat='Continuous')
+        self.tiempo_ciclo_estacion = LpVariable.dicts('TiempoCicloEstacion', (estacion for estacion in range(self.estaciones)) , lowBound=0, cat='Continuous')
+        self.tiempo_muerto_estacion = LpVariable.dicts('TiempoMuertoEstacion', (estacion for estacion in range(self.estaciones)) , lowBound=0, cat='Continuous')
 
     # Restriccion de predecesores
     def RestriccionPredecesores(self):
@@ -379,10 +386,40 @@ class BalanceoLineaProgramacionLineal():
                 nombre = nombre.replace('BinariaTareaEstacion_','').replace('(','').replace(')','').replace('_','').replace("'",'')
                 nombre = nombre.split(',')
                 self.activacion_estacion[nombre[0]] = 'Estacion '+ str(int(nombre[1])+1)
-            elif 'BinariaTareaEstacion' not in str(v):
-                print(v, v.varValue)
         return self.activacion_estacion
 
+    def Metricas(self):
+        self.metricas = pd.DataFrame()
+        for v in self.modelo.variables():
+            # BinariaEstacion
+            if 'BinariaEstacion' in str(v):
+                nombre = str(v)
+                nombre = nombre.replace('BinariaEstacion_','').replace('(','').replace(')','').replace('_','').replace("'",'')
+                nombre = nombre.split(',')
+                if round(v.varValue,0) <= 0:
+                    self.metricas.loc['Estacion '+ str(int(nombre[0])+1), 'Estación activa'] = 0
+                else:
+                    self.metricas.loc['Estacion '+ str(int(nombre[0])+1), 'Estación activa'] = int(v.varValue)
+            # TiempoCicloEstacion 
+            if 'TiempoCicloEstacion' in str(v):
+                nombre = str(v)
+                nombre = nombre.replace('TiempoCicloEstacion_','').replace('(','').replace(')','').replace('_','').replace("'",'')
+                nombre = nombre.split(',')
+                self.metricas.loc['Estacion '+ str(int(nombre[0])+1), 'Tiempo ciclo'] = round(v.varValue,1)
+            # TiempoMuertoEstacion 
+            if 'TiempoMuertoEstacion' in str(v):
+                nombre = str(v)
+                nombre = nombre.replace('TiempoMuertoEstacion_','').replace('(','').replace(')','').replace('_','').replace("'",'')
+                nombre = nombre.split(',')
+                self.metricas.loc['Estacion '+ str(int(nombre[0])+1), 'Tiempo muerto'] = round(v.varValue,1)
+        # Eficiencia
+        self.metricas['Eficiencia'] = self.metricas['Tiempo ciclo'] / self.metricas['Tiempo ciclo'].max()
+        return self.metricas
+
+    def Formulacion(self):
+        with open('Formaulación.txt', 'w') as archivo:
+            archivo.write(str(self.modelo))
+    
     # Solucionar modelo multiobjetivo
     def Solucionar(self):
         if self.funcion_objetivo == 'Numeros estaciones':
@@ -485,6 +522,7 @@ class SecuenciacionReglaJhonson():
         print(SecuneciaJhonson.secuencias_posibles)\n
         print(SecuneciaJhonson.secuencias)\n
         print(SecuneciaJhonson.tiempos_procesos_secuencias)\n
+        SecuneciaJhonson.DiagramaGantt(SecuneciaJhonson.secuencias[0])\n
     '''
     def __init__(self, tareas):
         self.tareas_base = tareas
@@ -579,6 +617,57 @@ class SecuenciacionReglaJhonson():
                 else:
                     matriz[i][j] = max([matriz[i][j-1],matriz[i-1][j]]) + duraciones[i][j]
         return matriz[i][j]
+    
+    # Grenerar df de tiempos inicio
+    def TiemposInicio(self, secuencia):
+        ti = pd.DataFrame(index= secuencia, columns=list(self.tareas_base_original[list(self.tareas_base_original.keys())[0]].keys()))
+        for i, tar in enumerate(ti.index):
+            for j, est in enumerate(ti.columns):
+                if i == 0 and j == 0:
+                    ti.loc[tar,est] = 0
+                elif i == 0 and j != 0:
+                    ti.loc[tar,est] = ti.iloc[i,j-1] + self.tareas_base_original[ti.index[i]][ti.columns[j-1]]
+                elif i != 0 and j == 0:
+                    ti.loc[tar,est] = ti.iloc[i-1,j] + self.tareas_base_original[ti.index[i-1]][ti.columns[j]]
+                else:
+                    ti.loc[tar,est] = max(ti.iloc[i-1,j] + self.tareas_base_original[ti.index[i-1]][ti.columns[j]], 
+                                          ti.iloc[i,j-1] + self.tareas_base_original[ti.index[i]][ti.columns[j-1]])
+        return ti
+
+    # Generar Diagrama de Gantt
+    def DiagramaGantt(self, secuencia : list):
+        '''
+        DiagramaGantt()\n
+        Genera un diagrama de Gantt para visualizar la programación resultante de las tareas y estaciones de trabajo.
+        Notas:\n
+        - Esta función genera un diagrama de Gantt para visualizar la programación resultante de las tareas y estaciones de trabajo obtenidas previamente del modelo de programación lineal (LP) resuelto.
+        - Cada barra horizontal representa una tarea y su ubicación en el diagrama corresponde al tiempo de inicio de la tarea.
+        - El eje vertical representa las estaciones de trabajo.
+        - La longitud de cada barra representa la duración de la tarea.
+        - Se muestra una leyenda para identificar cada tarea.\n
+        Ejemplo:\n
+            modelo.DiagramaGantt()
+        '''
+        ti = self.TiemposInicio(secuencia)
+        self.tiempos_resultado = { tar+'_'+est : ti.loc[tar, est] for tar in ti.index for est in ti.columns}
+        print(self.tiempos_resultado)
+        fig, ax = plt.subplots(1)
+        plt.title('Diagrama de Gantt')
+        plt.xlabel('Tiempos de inicio')
+        plt.ylabel('estaciones')
+        for tareas in self.tareas_base_original.keys():
+            inicios = []
+            estaciones = []
+            duraciones = []
+            for nombreInicio in self.tiempos_resultado.keys():
+                if tareas in nombreInicio:
+                    inicios.append(self.tiempos_resultado[nombreInicio])
+                    tar, est = nombreInicio.split('_',1)[0], nombreInicio.split('_',1)[1] 
+                    duraciones.append(self.tareas_base_original[tar][est])
+                    estaciones.append(est.split('_')[0])
+            ax.barh(estaciones, duraciones, left=inicios, label=tareas)
+        plt.legend(bbox_to_anchor=(1.02, 1.0), loc='upper left')
+        plt.show()
 
 class SecuenciacionReglaCDS():
     def __init__(self, tareas):
@@ -608,8 +697,10 @@ class SecuenciacionReglaCDS():
             print(cds.secuencias_posibles)\n
             print(cds.secuencias)\n
             print(cds.tiempos_procesos_secuencias)\n
+            cds.DiagramaGantt(cds.secuencias[0][0])
         '''
         self.tareas_base = tareas
+        self.tareas_base_original = tareas.copy()
         self.tareas = tareas
         self.nombreTareas = list(tareas.keys())
         self.nombreestaciones = list(list(tareas.values())[0].keys())
@@ -712,6 +803,75 @@ class SecuenciacionReglaCDS():
                 else:
                     matriz[i][j] = max([matriz[i][j-1],matriz[i-1][j]]) + duraciones[i][j]
         return matriz[i][j]
+    
+    # Calcular tiempo de proceso para cada secuencia
+    def CalcularTiempoProceso(self, secuencia):
+        duraciones = []
+        for tarea in secuencia:
+            duraciones.append([j for j in self.tareas_base_original[tarea].values()])
+        matriz = [ [0 for j in i] for i in self.tareas_base_original.values()]
+        for i in range(len(matriz)):
+            for j in range(len(matriz[i])):
+                if i==0 and j==0:
+                    matriz[i][j] = duraciones[i][j]
+                elif i==0:
+                    matriz[i][j] = matriz[i][j-1] + duraciones[i][j]
+                elif j==0:
+                    matriz[i][j] = matriz[i-1][j] + duraciones[i][j]
+                else:
+                    matriz[i][j] = max([matriz[i][j-1],matriz[i-1][j]]) + duraciones[i][j]
+        return matriz[i][j]
+    
+    # Grenerar df de tiempos inicio
+    def TiemposInicio(self, secuencia):
+        ti = pd.DataFrame(index= secuencia, columns=list(self.tareas_base_original[list(self.tareas_base_original.keys())[0]].keys()))
+        for i, tar in enumerate(ti.index):
+            for j, est in enumerate(ti.columns):
+                if i == 0 and j == 0:
+                    ti.loc[tar,est] = 0
+                elif i == 0 and j != 0:
+                    ti.loc[tar,est] = ti.iloc[i,j-1] + self.tareas_base_original[ti.index[i]][ti.columns[j-1]]
+                elif i != 0 and j == 0:
+                    ti.loc[tar,est] = ti.iloc[i-1,j] + self.tareas_base_original[ti.index[i-1]][ti.columns[j]]
+                else:
+                    ti.loc[tar,est] = max(ti.iloc[i-1,j] + self.tareas_base_original[ti.index[i-1]][ti.columns[j]], 
+                                          ti.iloc[i,j-1] + self.tareas_base_original[ti.index[i]][ti.columns[j-1]])
+        return ti
+
+    # Generar Diagrama de Gantt
+    def DiagramaGantt(self, secuencia : list):
+        '''
+        DiagramaGantt()\n
+        Genera un diagrama de Gantt para visualizar la programación resultante de las tareas y estaciones de trabajo.
+        Notas:\n
+        - Esta función genera un diagrama de Gantt para visualizar la programación resultante de las tareas y estaciones de trabajo obtenidas previamente del modelo de programación lineal (LP) resuelto.
+        - Cada barra horizontal representa una tarea y su ubicación en el diagrama corresponde al tiempo de inicio de la tarea.
+        - El eje vertical representa las estaciones de trabajo.
+        - La longitud de cada barra representa la duración de la tarea.
+        - Se muestra una leyenda para identificar cada tarea.\n
+        Ejemplo:\n
+            modelo.DiagramaGantt()
+        '''
+        ti = self.TiemposInicio(secuencia)
+        self.tiempos_resultado = { tar+'_'+est : ti.loc[tar, est] for tar in ti.index for est in ti.columns}
+        print(self.tiempos_resultado)
+        fig, ax = plt.subplots(1)
+        plt.title('Diagrama de Gantt')
+        plt.xlabel('Tiempos de inicio')
+        plt.ylabel('estaciones')
+        for tareas in self.tareas_base_original.keys():
+            inicios = []
+            estaciones = []
+            duraciones = []
+            for nombreInicio in self.tiempos_resultado.keys():
+                if tareas in nombreInicio:
+                    inicios.append(self.tiempos_resultado[nombreInicio])
+                    tar, est = nombreInicio.split('_',1)[0], nombreInicio.split('_',1)[1] 
+                    duraciones.append(self.tareas_base_original[tar][est])
+                    estaciones.append(est.split('_')[0])
+            ax.barh(estaciones, duraciones, left=inicios, label=tareas)
+        plt.legend(bbox_to_anchor=(1.02, 1.0), loc='upper left')
+        plt.show()
 
 class BranchAndBounds():
     def __init__(self, tareas : Dict):
