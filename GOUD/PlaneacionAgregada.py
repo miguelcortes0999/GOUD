@@ -27,14 +27,17 @@ class PlaneacionAgregada():
         GraficarCostos()
             Grafica los costos resultantes de la planificación.
         GraficarUnidades()
-            Grafica las unidades de producción resultantes de la planificación.\n
+            Grafica las unidades de producción resultantes de la planificación.
+        Formulacion()
+            Exporta formulación del modelo a archivo de texto
         Ejemplo:\n
-            modelo = PlaneacionAgregada()
-            modelo.CrearExcel(periodos=['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'])
-            modelo.CargarDatosExcel('Base GOUD Modelo Planeacion Agregada.xlsx', 'Datos planeacion', operarios_iniciales=9, porcen_ampli_tiem_extra=0.3)
-            modelo.CompilarModelo(res_mano_obra_constante=False, res_inventario_cero=False, res_subcontratacion=False, res_tiempo_suplementario=False)
-            var1, var2, var3, var4 = modelo.SolucionarModelo(excel=True)
-            modelo.GraficarCostos()
+            modelo = PlaneacionAgregada()\n
+            modelo.CrearExcel(periodos=['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'])\n
+            modelo.CargarDatosExcel('Base GOUD Modelo Planeacion Agregada.xlsx', 'Datos planeacion', operarios_iniciales=9, porcen_ampli_tiem_extra=0.3)\n
+            modelo.CompilarModelo(res_mano_obra_constante=False, res_inventario_cero=False, res_subcontratacion=False, res_tiempo_suplementario=False)\n
+            var1, var2, var3, var4 = modelo.SolucionarModelo(excel=True)\n
+            modelo.Formulacion()\n
+            modelo.GraficarCostos()\n
             modelo.GraficarUnidades()
         '''
         pass
@@ -364,7 +367,12 @@ class PlaneacionAgregada():
                         self.costos_productos_resultado[pr].to_excel(writer, sheet_name = 'Cos '+pr)
                 print('\nExcel creado exitosamente en al ruta...\n(Puede ser remplazado arhcivo con el mismo nombre)\n')
         return self.unidades_general_resultado, self.unidades_productos_resultado, self.costos_general_resultado, self.costos_productos_resultado
-            
+
+    # Exportar formulación a archivo
+    def Formulacion(self):
+        with open('Formaulación.txt', 'w') as archivo:
+            archivo.write(str(self.modelo))
+
     # Graficar valores de unidades estimados por modelo
     def GraficarUnidades(self):
         '''
