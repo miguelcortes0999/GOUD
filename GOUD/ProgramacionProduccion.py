@@ -24,7 +24,16 @@ class SecuenciacionProgramacionLineal():
             diccionario de key:tareas value:diccionarios de estaciones con duraciones de cada tarea respectiva en la estacion, en caso de estar repetida la estacion en
             el proceso se debe agregar el nombre de la estacioneseguido de raya al piso y el numero de la priorida, se debe ingresar en el diccionario de cada tarea las 
             estaciones en el orden que van a ser procesados\n
+        funcion_objetivo:\n
+            funciones objetivo conla cual se buscara el optimo para dicho valor, puede escoger entre las siguientes.
+            \n* tiempo total procesamiento
+            \n* importancia
+            \n* tiempo total muerto
+            \n* tiempo promedio flujo
+            \n* timepos retraso
         tiempos_entrega:\n
+            diciconario con tiempos de entrega maximos para ada tarea, en caso de solo especificar uno fijar un número muy grande para las otras tareas.
+        importnacia:\n
             diciconario con tiempos de entrega maximos para ada tarea, en caso de solo especificar uno fijar un número muy grande para las otras tareas.
         verbose:\n
             Controla la vista de la solución del modelo con tiempos y tamaño de salto del gap en busca de la solución
@@ -37,15 +46,15 @@ class SecuenciacionProgramacionLineal():
                     'T6' : { 'M1':8   , 'M3':5   , 'M2':4   },\n
                     'T7' : { 'M3_1':9 , 'M4':2   , 'M1':5    , 'M3_2':5 }}\n
             importancia = {'T1':2, 'T2':3, 'T3':4, 'T4':1, 'T5':1, 'T6':50, 'T7':300}\n
-            timepos_entrega = {'T1':50, 'T2':50, 'T3':50, 'T4':50, 'T5':50, 'T6':50, 'T7':50}\n
-            SecuanciacionPL = SecuenciacionProgramacionLineal(tareas = tareas, tiempos_entrega = timepos_entrega, importancia = importancia, funcion_objetivo = 'tiempo total procesamiento', verbose = False)\n
+            timepos_entrega = {'T1':50, 'T2':50, 'T3':50, 'T4':50, 'T5':50, 'T6':50, 'T7':50} \n
+            SecuanciacionPL = SecuenciacionProgramacionLineal(tareas = tareas, tiempos_entrega = timepos_entrega, importancia = importancia, funcion_objetivo = 'tiempo total muerto', verbose = True)\n
             tiempos_resultado, resumen_tareas, resumen_estaciones, tiempo_procesamiento_minimo = SecuanciacionPL.ResumenResultados()\n
             print(tiempos_resultado)\n
-            print(resumen_tareas)
+            print(resumen_tareas)\n
             print(resumen_estaciones)\n
             print(tiempo_procesamiento_minimo)\n
             SecuanciacionPL.Formulacion()\n
-            SecuanciacionPL.DiagramaGantt()\n
+            SecuanciacionPL.DiagramaGantt()
         '''
         self.modelo = LpProblem("modelo_secuanciacion_estaciones", sense=LpMinimize)
         self.M = 0
@@ -97,7 +106,7 @@ class SecuenciacionProgramacionLineal():
         self.nombres_estaciones_tareas = {tarea:list(self.tareas[tarea].keys()) for tarea in self.nombres_tareas}
         # Crear variables Tiempos de inicio
         self.nombres_tiempos_inicio = [tarea+'_'+estacion for tarea in self.nombres_tareas for estacion in self.nombres_estaciones_tareas[tarea]]
-        self.tiempos_inicio = LpVariable.dicts("TiemposInicio", self.nombres_tiempos_inicio , lowBound=0, cat='Continuos')
+        self.tiempos_inicio = LpVariable.dicts("TiemposInicio", self.nombres_tiempos_inicio , lowBound=0, cat='Continuous')
         # Crear agrupacion por Tareas
         self.diccionario_nombres_secuencia = dict((tarea,[]) for tarea in self.nombres_tareas)
         for nombres_tiempos_inicio in self.nombres_tiempos_inicio:
@@ -136,14 +145,14 @@ class SecuenciacionProgramacionLineal():
 
     # Restriccion de Tiempos entrega
     def RestriccionTiemposEntrega(self):
-        self.tiempo_retraso = LpVariable.dicts("TiempoRetraso", self.nombres_tareas , lowBound=0, cat='Continuos')
+        self.tiempo_retraso = LpVariable.dicts("TiempoRetraso", self.nombres_tareas , lowBound=0, cat='Continuous')
         for tarea, nombres_estaciones in self.nombres_estaciones_tareas.items():
             ultima_estacion = nombres_estaciones[-1]
             self.modelo += self.tiempos_inicio[tarea+'_'+ultima_estacion] + self.tareas[tarea][ultima_estacion] - self.tiempo_retraso[tarea] <= self.tiempos_entrega[tarea]
 
     # Restriccion de Tiempo Minimo (MAKESPAN)
     def RestriccionesTiempoMinimo(self):
-        self.tiempo_minimo = LpVariable("TiempoTotalProcesamiento", lowBound=0, cat='Continuos')
+        self.tiempo_minimo = LpVariable("TiempoTotalProcesamiento", lowBound=0, cat='Continuous')
         for tarea in self.diccionario_nombres_secuencia.keys():
             ultima_estacion = self.diccionario_nombres_secuencia[tarea][-1]
             tnti, mnti = ultima_estacion.split('_',1)[0], ultima_estacion.split('_',1)[1] 
@@ -151,8 +160,8 @@ class SecuenciacionProgramacionLineal():
 
     # Restriccion de Tiempo Muerto
     def RestriccionesTiempoMuerto(self):
-        self.tiempos_inicio_estacion = LpVariable.dicts("TiempoInicioEstacion", self.nombres_estaciones , lowBound=0, cat='Continuos')
-        self.tiempos_fin_estacion = LpVariable.dicts("TiempoFinEstacion", self.nombres_estaciones , lowBound=0, cat='Continuos')
+        self.tiempos_inicio_estacion = LpVariable.dicts("TiempoInicioEstacion", self.nombres_estaciones , lowBound=0, cat='Continuous')
+        self.tiempos_fin_estacion = LpVariable.dicts("TiempoFinEstacion", self.nombres_estaciones , lowBound=0, cat='Continuous')
         for estacion, nombres_tareas in self.diccionario_nombres_estaciones.items():
             for tarea_estacion in nombres_tareas:
                 self.modelo +=  self.tiempos_inicio_estacion[estacion] <= self.tiempos_inicio[tarea_estacion]
@@ -160,8 +169,8 @@ class SecuenciacionProgramacionLineal():
 
     # Restriccion de Tiempo promedio flujo
     def RestriccionesTiempoFlujoTarea(self):
-        self.tiempos_inicio_tarea = LpVariable.dicts("TiempoInicioTarea", self.nombres_tareas , lowBound=0, cat='Continuos')
-        self.tiempos_fin_tarea = LpVariable.dicts("TiempoFinTarea", self.nombres_tareas , lowBound=0, cat='Continuos')
+        self.tiempos_inicio_tarea = LpVariable.dicts("TiempoInicioTarea", self.nombres_tareas , lowBound=0, cat='Continuous')
+        self.tiempos_fin_tarea = LpVariable.dicts("TiempoFinTarea", self.nombres_tareas , lowBound=0, cat='Continuous')
         for tarea, nombres_estaciones in self.diccionario_nombres_secuencia.items():
             for tarea_estacion in nombres_estaciones:
                 self.modelo +=  self.tiempos_inicio_tarea[tarea] <= self.tiempos_inicio[tarea_estacion]
@@ -195,9 +204,9 @@ class SecuenciacionProgramacionLineal():
             objetivo = 0
             for tarea in self.nombres_tareas:
                 objetivo += self.tiempos_fin_tarea[tarea] - self.tiempos_inicio_tarea[tarea]
-            self.modelo += objetivo/len(self.nombres_tareas)
+            self.modelo += (objetivo/len(self.nombres_tareas)) + (self.tiempo_minimo*(1/self.M))
         elif funcion.lower() == 'timepos retraso':
-            self.modelo += lpSum(self.tiempo_retraso[tarea] for tarea in self.nombres_tareas)
+            self.modelo += lpSum(self.tiempo_retraso[tarea] for tarea in self.nombres_tareas) 
         else:
             raise ValueError('Funcion objetivo no parametrizada')
 
@@ -212,8 +221,8 @@ class SecuenciacionProgramacionLineal():
     # Diccionario de tiempos de inicio
     def ResumenResultados(self):
         self.tiempos_resultado = {}
-        self.resumen_tareas = pd.DataFrame(columns=['TiempoInicioTarea','TiempoFinTarea','TiempoRetraso'])
-        self.resumen_estaciones = pd.DataFrame(columns=['TiempoInicioEstacion','TiempoFinEstacion'])
+        self.resumen_tareas = pd.DataFrame(columns=['Tiempo inicio tarea','Tiempo fin tarea','Tiempo retraso'])
+        self.resumen_estaciones = pd.DataFrame(columns=['Tiempo inicio estacion','Tiempo fin estacion'])
         for v in self.modelo.variables():
             if 'TiemposInicio' in str(v):
                 nombre = str(v)
@@ -221,21 +230,43 @@ class SecuenciacionProgramacionLineal():
                 self.tiempos_resultado[nombre] = round(v.varValue,0)
             if 'TiempoInicioEstacion' in str(v):
                 nombre = str(v).split('_')
-                self.resumen_estaciones.loc[nombre[1], nombre[0]] = round(v.varValue,0)
+                self.resumen_estaciones.loc[nombre[1], 'Tiempo inicio estacion'] = round(v.varValue,0)
             if 'TiempoFinEstacion' in str(v):
                 nombre = str(v).split('_')
-                self.resumen_estaciones.loc[nombre[1], nombre[0]] = round(v.varValue,0)
+                self.resumen_estaciones.loc[nombre[1], 'Tiempo fin estacion'] = round(v.varValue,0)
             if 'TiempoInicioTarea' in str(v):
                 nombre = str(v).split('_')
-                self.resumen_tareas.loc[nombre[1], nombre[0]] = round(v.varValue,0)
+                self.resumen_tareas.loc[nombre[1], 'Tiempo inicio tarea'] = round(v.varValue,0)
             if 'TiempoFinTarea' in str(v):
                 nombre = str(v).split('_')
-                self.resumen_tareas.loc[nombre[1], nombre[0]] = round(v.varValue,0)
+                self.resumen_tareas.loc[nombre[1], 'Tiempo fin tarea'] = round(v.varValue,0)
             if 'TiempoRetraso' in str(v):
                 nombre = str(v).split('_')
-                self.resumen_tareas.loc[nombre[1], nombre[0]] = round(v.varValue,0)
+                self.resumen_tareas.loc[nombre[1], 'Tiempo retraso'] = round(v.varValue,0)
             if 'TiempoTotalProcesamiento' in str(v):
                 self.tiempo_procesamiento_minimo = round(v.varValue,0)
+        # Correccion de tiempos de incio tarea 
+        for tarea in self.nombres_tareas:
+            tareas_inicio = []
+            for tarea_estacion in self.tiempos_resultado.keys():
+                if tarea in tarea_estacion:
+                    tareas_inicio.append(self.tiempos_resultado[tarea_estacion])
+            self.resumen_tareas.loc[tarea, 'Tiempo inicio tarea'] = np.array(tareas_inicio).min()  
+        # Correccion de tiempos de incio estación 
+        for estacion in self.nombres_estaciones:
+            estaciones_inicio = []
+            for tarea_estacion in self.tiempos_resultado.keys():
+                if estacion in tarea_estacion:
+                    estaciones_inicio.append(self.tiempos_resultado[tarea_estacion])
+            self.resumen_estaciones.loc[estacion, 'Tiempo inicio estacion'] = np.array(estaciones_inicio).min()  
+        # Cálculo de métricas
+        self.resumen_tareas['Tiempo flujo'] = self.resumen_tareas['Tiempo fin tarea'] - self.resumen_tareas['Tiempo inicio tarea']
+        self.resumen_estaciones['Tiempo bloqueo'] = self.resumen_estaciones['Tiempo fin estacion'] - self.resumen_estaciones['Tiempo inicio estacion']
+        for est in self.resumen_estaciones.index:
+            for tarea in self.nombres_tareas:
+                for estacion in self.tareas[tarea].keys():
+                    if est in estacion:
+                        self.resumen_estaciones.loc[est,'Tiempo bloqueo'] -= self.tareas[tarea][estacion]
         return self.tiempos_resultado, self.resumen_tareas, self.resumen_estaciones, self.tiempo_procesamiento_minimo
 
     def Formulacion(self):
@@ -522,7 +553,9 @@ class SecuenciacionReglaJhonson():
         print(SecuneciaJhonson.secuencias_posibles)\n
         print(SecuneciaJhonson.secuencias)\n
         print(SecuneciaJhonson.tiempos_procesos_secuencias)\n
-        SecuneciaJhonson.DiagramaGantt(SecuneciaJhonson.secuencias[0])\n
+        historico_secuencias = SecuneciaJhonson.Metricas().sort_values(['T. total fnalización'])
+        print(historico_secuencias)\n
+        SecuneciaJhonson.DiagramaGantt(historico_secuencias.iloc[0,0])\n
     '''
     def __init__(self, tareas):
         self.tareas_base = tareas
@@ -633,6 +666,24 @@ class SecuenciacionReglaJhonson():
                     ti.loc[tar,est] = max(ti.iloc[i-1,j] + self.tareas_base_original[ti.index[i-1]][ti.columns[j]], 
                                           ti.iloc[i,j-1] + self.tareas_base_original[ti.index[i]][ti.columns[j-1]])
         return ti
+    
+    # Metricas
+    def Metricas(self):
+        self.metricas_desempenio = pd.DataFrame()
+        self.metricas_desempenio['Secuencia'] = self.secuencias
+        self.metricas_desempenio['T. total fnalización'] = self.tiempos_procesos_secuencias
+        for i,sec in enumerate(list(self.metricas_desempenio['Secuencia'])):
+            ti = self.TiemposInicio(sec).values
+            for e,est in enumerate(self.tareas_base_original[list(self.tareas_base_original.keys())[0]].keys()):
+                #self.metricas_desempenio.loc[i,'T. inicio '+est]= ti[0][e]
+                #self.metricas_desempenio.loc[i,'T. final '+est] = ti[-1][e] + self.tareas_base_original[sec[-1]][est]
+                self.metricas_desempenio.loc[i,'T. bloqueo '+est] = ti[-1][e] + self.tareas_base_original[sec[-1]][est] - ti[0][e] - pd.DataFrame(self.tareas_base_original).T[est].sum()
+        self.metricas_desempenio['T. total bloqueo'] = self.metricas_desempenio.iloc[:,2:-1].sum(axis=1)
+        for i,sec in enumerate(list(self.metricas_desempenio['Secuencia'])):
+            ti = self.TiemposInicio(sec).values
+            for e,est in enumerate(self.tareas_base_original[list(self.tareas_base_original.keys())[0]].keys()):
+                self.metricas_desempenio.loc[i, '%. utilización '+est] = (ti[-1][e] + self.tareas_base_original[sec[-1]][est] - ti[0][e]) / self.metricas_desempenio.loc[i,'T. total fnalización']
+        return self.metricas_desempenio
 
     # Generar Diagrama de Gantt
     def DiagramaGantt(self, secuencia : list):
@@ -650,7 +701,6 @@ class SecuenciacionReglaJhonson():
         '''
         ti = self.TiemposInicio(secuencia)
         self.tiempos_resultado = { tar+'_'+est : ti.loc[tar, est] for tar in ti.index for est in ti.columns}
-        print(self.tiempos_resultado)
         fig, ax = plt.subplots(1)
         plt.title('Diagrama de Gantt')
         plt.xlabel('Tiempos de inicio')
@@ -667,7 +717,7 @@ class SecuenciacionReglaJhonson():
                     estaciones.append(est.split('_')[0])
             ax.barh(estaciones, duraciones, left=inicios, label=tareas)
         plt.legend(bbox_to_anchor=(1.02, 1.0), loc='upper left')
-        plt.show()
+        plt.show() 
 
 class SecuenciacionReglaCDS():
     def __init__(self, tareas):
@@ -697,7 +747,9 @@ class SecuenciacionReglaCDS():
             print(cds.secuencias_posibles)\n
             print(cds.secuencias)\n
             print(cds.tiempos_procesos_secuencias)\n
-            cds.DiagramaGantt(cds.secuencias[0][0])
+            metricas_secuencias = cds.Metricas().sort_values(['T. total fnalización','T. total bloqueo'])\n
+            print(metricas_secuencias)\n
+            cds.DiagramaGantt(metricas_secuencias.iloc[0,0])\n
         '''
         self.tareas_base = tareas
         self.tareas_base_original = tareas.copy()
@@ -821,7 +873,7 @@ class SecuenciacionReglaCDS():
                 else:
                     matriz[i][j] = max([matriz[i][j-1],matriz[i-1][j]]) + duraciones[i][j]
         return matriz[i][j]
-    
+
     # Grenerar df de tiempos inicio
     def TiemposInicio(self, secuencia):
         ti = pd.DataFrame(index= secuencia, columns=list(self.tareas_base_original[list(self.tareas_base_original.keys())[0]].keys()))
@@ -834,9 +886,25 @@ class SecuenciacionReglaCDS():
                 elif i != 0 and j == 0:
                     ti.loc[tar,est] = ti.iloc[i-1,j] + self.tareas_base_original[ti.index[i-1]][ti.columns[j]]
                 else:
-                    ti.loc[tar,est] = max(ti.iloc[i-1,j] + self.tareas_base_original[ti.index[i-1]][ti.columns[j]], 
-                                          ti.iloc[i,j-1] + self.tareas_base_original[ti.index[i]][ti.columns[j-1]])
+                    ti.loc[tar,est] = max(ti.iloc[i-1,j] + self.tareas_base_original[ti.index[i-1]][ti.columns[j]], ti.iloc[i,j-1] + self.tareas_base_original[ti.index[i]][ti.columns[j-1]])
         return ti
+    
+    # Metricas
+    def Metricas(self):
+        print('-'*100)
+        self.metricas_desempenio = pd.DataFrame()
+        self.metricas_desempenio['Secuencia'] = [sec for secuencias in self.secuencias for sec in secuencias]
+        self.metricas_desempenio['T. total fnalización'] = [t_sec for timepos_secuencias in self.tiempos_procesos_secuencias for t_sec in timepos_secuencias]
+        for i,sec in enumerate(list(self.metricas_desempenio['Secuencia'])):
+            ti = self.TiemposInicio(sec).values
+            for e,est in enumerate(self.tareas_base_original[list(self.tareas_base_original.keys())[0]].keys()):
+                self.metricas_desempenio.loc[i,'T. bloqueo '+est] = ti[-1][e] + self.tareas_base_original[sec[-1]][est] - ti[0][e] - pd.DataFrame(self.tareas_base_original).T[est].sum()
+        self.metricas_desempenio['T. total bloqueo'] = self.metricas_desempenio.iloc[:,2:-1].sum(axis=1)
+        for i,sec in enumerate(list(self.metricas_desempenio['Secuencia'])):
+            ti = self.TiemposInicio(sec).values
+            for e,est in enumerate(self.tareas_base_original[list(self.tareas_base_original.keys())[0]].keys()):
+                self.metricas_desempenio.loc[i, '%. utilización '+est] = (ti[-1][e] + self.tareas_base_original[sec[-1]][est] - ti[0][e]) / self.metricas_desempenio.loc[i,'T. total fnalización']
+        return self.metricas_desempenio
 
     # Generar Diagrama de Gantt
     def DiagramaGantt(self, secuencia : list):
