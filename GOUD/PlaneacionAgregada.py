@@ -149,13 +149,13 @@ class PlaneacionAgregada():
         self.operarios_despedidos = LpVariable.dicts("OperariosDespedidos", self.periodos , lowBound=0, cat='Integer')
         self.operarios = LpVariable.dicts("Operarios", self.periodos , lowBound=0, cat='Integer')
         self.produccion_normal = LpVariable.dicts("ProduccionNormal", ((pr, pe) for pe in self.periodos for pr in self.productos) ,
-                                                 lowBound=0, cat='Continuos')
+                                                 lowBound=0, cat='Continuous')
         self.produccion_extra = LpVariable.dicts("ProduccionExtra", ((pr, pe) for pe in self.periodos for pr in self.productos) , 
-                                                lowBound=0, cat='Continuos')
+                                                lowBound=0, cat='Continuous')
         self.produccion_subcontratada = LpVariable.dicts("ProduccionSubcontratacion", ((pr, pe) for pe in self.periodos for pr in self.productos) ,
                                                           lowBound=0, cat='Integer')
         self.inventario = LpVariable.dicts("Inventario", ((pr, pe) for pe in self.periodos for pr in self.productos) , 
-                                           lowBound=0, cat='Continuos')
+                                           lowBound=0, cat='Continuous')
 
     # Restriciones basicas de modelo de planeación agregada completo
     def RestriccionesDemanda(self):
@@ -180,7 +180,7 @@ class PlaneacionAgregada():
 
     def RestriccionesDespidoOperarios(self):
         for pe in self.periodos:
-            self.modelo += self.operarios_contratados[pe] <= self.df_planeacion.loc[pe,'Max Operarios despedir(Operario)']
+            self.modelo += self.operarios_despedidos[pe] <= self.df_planeacion.loc[pe,'Max Operarios despedir(Operario)']
 
     def RestriccionesTiempoNormal(self):
         for pe in self.periodos:
