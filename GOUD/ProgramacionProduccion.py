@@ -28,9 +28,9 @@ class SecuenciacionProgramacionLineal():
             funciones objetivo conla cual se buscara el optimo para dicho valor, puede escoger entre las siguientes.
             \n* tiempo total procesamiento
             \n* importancia
-            \n* tiempo total muerto
+            \n* tiempo total bloqueo
             \n* tiempo promedio flujo
-            \n* timepos retraso
+            \n* tiempos retraso
         tiempos_entrega:\n
             diciconario con tiempos de entrega maximos para ada tarea, en caso de solo especificar uno fijar un número muy grande para las otras tareas.
         importnacia:\n
@@ -46,8 +46,8 @@ class SecuenciacionProgramacionLineal():
                     'T6' : { 'M1':8   , 'M3':5   , 'M2':4   },\n
                     'T7' : { 'M3_1':9 , 'M4':2   , 'M1':5    , 'M3_2':5 }}\n
             importancia = {'T1':2, 'T2':3, 'T3':4, 'T4':1, 'T5':1, 'T6':50, 'T7':300}\n
-            timepos_entrega = {'T1':50, 'T2':50, 'T3':50, 'T4':50, 'T5':50, 'T6':50, 'T7':50} \n
-            SecuanciacionPL = SecuenciacionProgramacionLineal(tareas = tareas, tiempos_entrega = timepos_entrega, importancia = importancia, funcion_objetivo = 'tiempo total muerto', verbose = True)\n
+            tiempos_entrega = {'T1':50, 'T2':50, 'T3':50, 'T4':50, 'T5':50, 'T6':50, 'T7':50} \n
+            SecuanciacionPL = SecuenciacionProgramacionLineal(tareas = tareas, tiempos_entrega = tiempos_entrega, importancia = importancia, funcion_objetivo = 'tiempo total bloqueo', verbose = True)\n
             tiempos_resultado, resumen_tareas, resumen_estaciones, tiempo_procesamiento_minimo = SecuanciacionPL.ResumenResultados()\n
             print(tiempos_resultado)\n
             print(resumen_tareas)\n
@@ -190,8 +190,8 @@ class SecuenciacionProgramacionLineal():
                 ultima_estacion = nombres_estaciones[-1]
                 objetivo += (self.tiempos_inicio[tarea+'_'+ultima_estacion] + self.tareas[tarea][ultima_estacion]) * self.importancia[tarea] 
             self.modelo += objetivo
-        elif funcion.lower() == 'tiempo total muerto':
-            # Declaracion de Funcion tiempo total muerto     
+        elif funcion.lower() == 'tiempo total bloqueo':
+            # Declaracion de Funcion tiempo total bloqueo     
             objetivo = 0
             for estacion in self.nombres_estaciones:
                 objetivo += self.tiempos_fin_estacion[estacion] - self.tiempos_inicio_estacion[estacion]
@@ -200,12 +200,12 @@ class SecuenciacionProgramacionLineal():
                     objetivo -= self.tareas[tarea][estacion] 
             self.modelo += objetivo
         elif funcion.lower() == 'tiempo promedio flujo':
-            # Declaracion de Funcion tiempo total muerto
+            # Declaracion de Funcion tiempo promedio flujo
             objetivo = 0
             for tarea in self.nombres_tareas:
                 objetivo += self.tiempos_fin_tarea[tarea] - self.tiempos_inicio_tarea[tarea]
             self.modelo += (objetivo/len(self.nombres_tareas)) + (self.tiempo_minimo*(1/self.M))
-        elif funcion.lower() == 'timepos retraso':
+        elif funcion.lower() == 'tiempos retraso':
             self.modelo += lpSum(self.tiempo_retraso[tarea] for tarea in self.nombres_tareas) 
         else:
             raise ValueError('Funcion objetivo no parametrizada')
@@ -443,6 +443,8 @@ class BalanceoLineaProgramacionLineal():
                 nombre = nombre.replace('TiempoMuertoEstacion_','').replace('(','').replace(')','').replace('_','').replace("'",'')
                 nombre = nombre.split(',')
                 self.metricas.loc['Estacion '+ str(int(nombre[0])+1), 'Tiempo muerto'] = round(v.varValue,1)
+        self.metricas['Estación activa'] = self.metricas['Tiempo ciclo'].apply(lambda x: 0 if x==0 else 1)
+        self.metricas['Tiempo muerto'] = self.metricas[['Tiempo ciclo','Tiempo muerto']].apply(lambda x: 0 if x['Tiempo ciclo']==0 else x['Tiempo muerto'], axis=1)
         # Eficiencia
         self.metricas['Eficiencia'] = self.metricas['Tiempo ciclo'] / self.metricas['Tiempo ciclo'].max()
         return self.metricas
@@ -678,7 +680,7 @@ class SecuenciacionReglaJhonson():
                 #self.metricas_desempenio.loc[i,'T. inicio '+est]= ti[0][e]
                 #self.metricas_desempenio.loc[i,'T. final '+est] = ti[-1][e] + self.tareas_base_original[sec[-1]][est]
                 self.metricas_desempenio.loc[i,'T. bloqueo '+est] = ti[-1][e] + self.tareas_base_original[sec[-1]][est] - ti[0][e] - pd.DataFrame(self.tareas_base_original).T[est].sum()
-        self.metricas_desempenio['T. total bloqueo'] = self.metricas_desempenio.iloc[:,2:-1].sum(axis=1)
+        self.metricas_desempenio['T. total bloqueo'] = self.metricas_desempenio.iloc[:,2::].sum(axis=1)
         for i,sec in enumerate(list(self.metricas_desempenio['Secuencia'])):
             ti = self.TiemposInicio(sec).values
             for e,est in enumerate(self.tareas_base_original[list(self.tareas_base_original.keys())[0]].keys()):
@@ -899,7 +901,7 @@ class SecuenciacionReglaCDS():
             ti = self.TiemposInicio(sec).values
             for e,est in enumerate(self.tareas_base_original[list(self.tareas_base_original.keys())[0]].keys()):
                 self.metricas_desempenio.loc[i,'T. bloqueo '+est] = ti[-1][e] + self.tareas_base_original[sec[-1]][est] - ti[0][e] - pd.DataFrame(self.tareas_base_original).T[est].sum()
-        self.metricas_desempenio['T. total bloqueo'] = self.metricas_desempenio.iloc[:,2:-1].sum(axis=1)
+        self.metricas_desempenio['T. total bloqueo'] = self.metricas_desempenio.iloc[:,2::].sum(axis=1)
         for i,sec in enumerate(list(self.metricas_desempenio['Secuencia'])):
             ti = self.TiemposInicio(sec).values
             for e,est in enumerate(self.tareas_base_original[list(self.tareas_base_original.keys())[0]].keys()):
@@ -1204,9 +1206,7 @@ class ReglasSecuenciacion():
         self.data = pd.DataFrame(tareas).T
         self.importancia = pd.DataFrame(index = self.data.index)
         if importancia is None:
-            print('aca')
             self.importancia['importancia'] = 1/len(self.data.index)
-            print(self.importancia)
         else:
             # Ordenar los índices de ambos DataFrames
             dfaux1 = self.data.sort_index()
@@ -1217,7 +1217,6 @@ class ReglasSecuenciacion():
             else:
                 raise("Los índices de los DataFrames son diferentes")
             self.importancia['importancia'] = importancia
-        print(self.importancia)
 
     # Calcular metricas
     def Metricas(self, df : pd.DataFrame):
