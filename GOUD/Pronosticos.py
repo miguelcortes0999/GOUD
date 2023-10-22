@@ -43,6 +43,11 @@ class PromedioMovil():
     # Calcular pronóstico
     def Pronosticar(self, horizonte_pronostico: int = 1):
         self.pronostico_periodos = horizonte_pronostico
+        pronostico_temporal = np.array(self.pronostico.copy())
+        real_temporal = np.array(self.historico.copy())
+        indices_nan = np.isnan(real_temporal)
+        real_temporal[indices_nan] = pronostico_temporal[indices_nan]
+        self.pronostico = pd.DataFrame(real_temporal)
         # Agregar pronsoticos
         n = len(self.pronostico_historico)
         for i in range(self.pronostico_periodos):
@@ -573,4 +578,10 @@ class ErroresModelos():
             errores_absolutos = np.abs(demanda_pronsoticada - demanda_historica)
             SR = np.round(np.nanmean(errores_absolutos) / np.nanstd(errores_absolutos),2)
             self.metricas.loc[modelo.titulo_grafico,"SR"] = SR
+            # R2 (R2)
+            meida_historica = np.nanmean(demanda_historica)
+            ss_total = np.sum((demanda_historica-meida_historica)**2)
+            ss_residuos = np.sum((demanda_historica-demanda_pronsoticada)**2)
+            r2 = np.round(1 - (ss_residuos/ss_total),2)
+            self.metricas.loc[modelo.titulo_grafico,"R2"] = r2
         return self.metricas
